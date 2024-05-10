@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: darkslategrey;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send File</title>
+</head>
+<body>
+    <h1>Send a File</h1>
+    <input type="file" id="fileInput">
+
+    <button onclick="handleAction(true)">Send File</button><br><br>
+    
+    <input type="password" id="passwordInput" placeholder="Password">
+    <input type="text" id="fileIdInput" placeholder="File ID">
+    <button onclick="handleAction(false)">Get File</button>
+
+    <p id="FileName"></p>
+    <p id="FileSize"></p>
+    <p id="FileState"></p>
+    <p id="FileID"></p>
+    <p id="FileKEY"></p>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="main.js"></script>
+    <script>
+        var runner = new Runner();  // Инициализация runner здесь
+
+        function handleAction(isSender) {
+            const fileInput = document.getElementById('fileInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const fileIdInput = document.getElementById('fileIdInput');
+            const selectedFile = isSender ? fileInput.files[0] : null;
+
+            runner.start(isSender, selectedFile, passwordInput.value, fileIdInput.value);
+            //runner.start(isSender, selectedFile, "", "");
+        }
+
+        //up list
+        socket.on('StarterPackId', (File) => runner._sendStart(File));
+        socket.on('StartRunner', (File) => runner._sendStartRunner(File));
+        socket.on('NextPlease', (File) => runner._NextToSend(File));
+        socket.on('doneHere', (File) => runner._GetLink(File));
+
+        //down list
+        socket.on('GetReqDown', (File) => runner._GetReqDown(File))
+        socket.on('Downloadhandler', (File) => runner._Downloadhandler(File))
+</script>
+</body>
+</html>
