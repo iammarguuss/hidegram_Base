@@ -1,0 +1,27 @@
+{
+  "name": "hidechange",
+  "version": "0.0.1",
+  "description": "Just, em, hide change project))",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hide",
+    "change",
+    "Mark",
+    "p2p",
+    "socket"
+  ],
+  "author": "iammarguuss",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.3",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "https": "^1.0.0",
+    "mysql2": "^3.9.2",
+    "peer": "^1.0.2",
+    "socket.io": "^4.7.4"
+  }
+}
