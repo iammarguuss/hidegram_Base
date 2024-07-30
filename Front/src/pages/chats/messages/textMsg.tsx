@@ -1,8 +1,9 @@
 import { twMerge } from "tailwind-merge";
-import { Message } from "./messageItem";
+// import { Message } from "./messageItem";
+import { IMessage } from "./messages";
 
 type Props = {
-	message: Message;
+	message: IMessage;
 	isName: boolean;
 	isMe: boolean;
 	isInBetween: boolean;
@@ -19,7 +20,7 @@ function TextMsg({ message, isName, isMe, isInBetween }: Props) {
 						"text-[15px] md:text-xs font-medium"
 					)}
 				>
-					{message.sender.name}
+					{message.nickname}
 				</p>
 			)}
 			<p
@@ -30,7 +31,7 @@ function TextMsg({ message, isName, isMe, isInBetween }: Props) {
 				)}
 			>
 				<span className="text-[17px] md:text-sm">
-					{message.content.text}
+					{message.message}
 				</span>
 				<span
 					className={twMerge(
@@ -42,7 +43,7 @@ function TextMsg({ message, isName, isMe, isInBetween }: Props) {
 						hour: "numeric",
 						minute: "2-digit",
 						hour12: true,
-					}).format(new Date(message.timestamp))}
+					}).format(new Date(message.created))}
 				</span>
 			</p>
 		</>
