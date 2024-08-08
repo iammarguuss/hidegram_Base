@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { FC, useEffect, useState } from "react";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import BackBtn from "@/components/backBtn";
 import EditBtn from "@/components/editBtn";
@@ -7,9 +7,9 @@ import Header from "@/components/header";
 import Input from "@/components/ui/input";
 import Scrollable from "@/components/scrollable";
 import MessageItem from "./messageItem";
-import { fakeMessages } from "@/../fakeData";
-import { useConnectSocket as useMessagesSocket } from "@/hooks/useConnectSocket";
 import { SocketApi } from "../../../socket";
+import { ChatStore } from "@/stores/chatStore";
+import { observer } from "mobx-react-lite";
 
 export interface IMessage {
   id: number;
@@ -21,31 +21,55 @@ export interface IMessage {
   algo?: number;
 }
 
-const Messages = () => {
-  const { messages, sendMessage } = useMessagesSocket();
+interface IMessagesProps {
+  chatStore: ChatStore;
+}
+
+const Messages: FC<IMessagesProps> = observer((props) => {
+  const {
+    chatStore: { selectedChat, nickname, setSelectedChat },
+  } = props;
+  const { userId } = useParams();
+  // TODO remove
+  // const { messages, sendMessage } = useMessagesSocket(userId);
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<IMessage[]>([]);
+  const navigate = useNavigate();
 
-  console.log({ messages });
-  console.log({ instance: SocketApi.instance });
+  useEffect(() => {
+    SocketApi.instance.on("messages", onMessageEvent);
+  }, [userId]);
 
-  const isMoreThanTwoAuthors =
-    [...new Set(fakeMessages.map((msg) => msg.sender.name))].length > 2;
+  const onMessageEvent = (data: IMessage[]) => {
+    setMessages(data.reverse());
+  };
+
+  const sendMessage = (data: Partial<IMessage>) => {
+    SocketApi.instance.emit("messages:send", data);
+  };
+
+  useEffect(() => {
+    setSelectedChat(userId);
+  }, [userId, setSelectedChat]);
+
+  // TODO
+  const isMoreThanTwoAuthors = false;
+  // [...new Set(fakeMessages.map((msg) => msg.sender.name))].length > 2;
 
   const onSendMessage = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    sendMessage({
-      chat_id: 1,
-      nickname: "TestNickname",
-      message,
-      skey: 1,
-    });
-    setMessage("");
+    if (selectedChat?.skey) {
+      sendMessage({
+        chat_id: 1,
+        nickname,
+        message,
+        skey: selectedChat.skey,
+      });
+      setMessage("");
+    } else {
+      navigate("/chats");
+    }
   };
-
-  // TODO loading
-  // if (!SocketApi.instance.connected) {
-  //   return <div>Loading...</div>;
-  // }
 
   return (
     <>
@@ -54,9 +78,11 @@ const Messages = () => {
           <BackBtn className="md:hidden" />
 
           <div className={twMerge("text-center md:text-left")}>
-            <h1 className="text-lg font-medium md:text-base">Mark</h1>
+            <h1 className="text-lg font-medium md:text-base">
+              {selectedChat?.name || nickname}
+            </h1>
             <p className="text-[13px] md:text-[14px] text-gray">
-              ID:18539181214
+              {`ID: ${selectedChat?.id}`}
             </p>
           </div>
 
@@ -116,6 +142,6 @@ const Messages = () => {
       </form>
     </>
   );
-};
+});
 
 export default Messages;

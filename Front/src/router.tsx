@@ -33,63 +33,66 @@ import Notifications from "./pages/settings/notifications.tsx";
 import Feedback from "./pages/settings/feedback.tsx";
 import BugReport from "./pages/settings/bugReport.tsx";
 import ChatId from "./pages/change/chatId.tsx";
+import { ChatStore } from "./stores/chatStore.ts";
+
+const chatStore = new ChatStore();
 
 export const routes = [
-	{
-		path: "/",
-		element: <Layout />,
-		errorElement: <NotFound />,
-		children: [
-			{
-				path: "/access",
-				element: <Access />,
-				children: [
-					{ path: ":data", element: <Data /> },
-					{ path: "signup", element: <Signup /> },
-					{ path: "signin", element: <Signin /> },
-				],
-			},
-			{
-				path: "/change",
-				element: <Change />,
-				children: [
-					{ path: "password-settings", element: <PassSettings /> },
-					{ path: "exchange-method", element: <ExchangeMethod /> },
-					{ path: "password-exchange", element: <PassToExchange /> },
-					{ path: "waiting-time", element: <WaitingTime /> },
-					{ path: "chat-id", element: <ChatId /> },
-					{ path: "exchange", element: <Exchange /> },
-				],
-			},
-			{
-				path: "/chats",
-				element: <Chats />,
-				children: [
-					{ path: ":user-id", element: <Messages /> },
-					{ path: "chat-settings", element: <ChatSettings /> },
-					{ path: "new-chat", element: <NewChat /> },
-				],
-			},
-			{
-				path: "/settings",
-				element: <Settings />,
-				children: [
-					{ path: "my-access", element: <MyAccess /> },
-					{ path: "edit-nickname", element: <EditNickname /> },
-					{ path: "edit-password", element: <EditPassword /> },
-					{ path: "language", element: <Language /> },
-					{ path: "database", element: <Database /> },
-					{ path: "db-product", element: <Product /> },
-					{ path: "db-order", element: <Order /> },
-					{ path: "db-number", element: <Number /> },
-					{ path: "db-search", element: <Search /> },
-					{ path: "notifications", element: <Notifications /> },
-					{ path: "feedback", element: <Feedback /> },
-					{ path: "bug-report", element: <BugReport /> },
-				],
-			},
-		],
-	},
+  {
+    path: "/",
+    element: <Layout />,
+    errorElement: <NotFound />,
+    children: [
+      {
+        path: "/access",
+        element: <Access />,
+        children: [
+          { path: ":data", element: <Data /> },
+          { path: "signup", element: <Signup /> },
+          { path: "signin", element: <Signin /> },
+        ],
+      },
+      {
+        path: "/change",
+        element: <Change />,
+        children: [
+          { path: "password-settings", element: <PassSettings /> },
+          { path: "exchange-method", element: <ExchangeMethod /> },
+          { path: "password-exchange", element: <PassToExchange /> },
+          { path: "waiting-time", element: <WaitingTime /> },
+          { path: "chat-id", element: <ChatId /> },
+          { path: "exchange", element: <Exchange /> },
+        ],
+      },
+      {
+        path: "/chats",
+        element: <Chats chatStore={chatStore} />,
+        children: [
+          { path: ":userId", element: <Messages chatStore={chatStore}/> },
+          { path: "chat-settings", element: <ChatSettings /> },
+          { path: "new-chat", element: <NewChat chatStore={chatStore} /> },
+        ],
+      },
+      {
+        path: "/settings",
+        element: <Settings />,
+        children: [
+          { path: "my-access", element: <MyAccess /> },
+          { path: "edit-nickname", element: <EditNickname /> },
+          { path: "edit-password", element: <EditPassword /> },
+          { path: "language", element: <Language /> },
+          { path: "database", element: <Database /> },
+          { path: "db-product", element: <Product /> },
+          { path: "db-order", element: <Order /> },
+          { path: "db-number", element: <Number /> },
+          { path: "db-search", element: <Search /> },
+          { path: "notifications", element: <Notifications /> },
+          { path: "feedback", element: <Feedback /> },
+          { path: "bug-report", element: <BugReport /> },
+        ],
+      },
+    ],
+  },
 ];
 const router = createBrowserRouter(routes);
 export default router;

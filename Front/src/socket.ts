@@ -3,14 +3,23 @@ import io, { Socket } from "socket.io-client";
 export class SocketApi {
   private static socket: Socket | null = null;
 
-  static createConnection() {
-    this.instance.on("connect", this.onConnect);
-    this.instance.on("disconnect", this.onDisconnect);
+  static createConnection({ chatId, skey }: { chatId: number; skey: number }) {
+    this.socket = io("http://localhost:3000/", {
+      query: {
+        chatId,
+        skey,
+      },
+    });
+    this.socket.on("connect", this.onConnect);
+    this.socket.on("disconnect", this.onDisconnect);
   }
 
   static get instance(): Socket {
-    // TODO from env
-    return this.socket ? this.socket : io("http://localhost:3000/");
+    if (this.socket === null) {
+      window.location.href = "/chats/";
+    }
+
+    return this.socket!;
   }
 
   static onConnect() {

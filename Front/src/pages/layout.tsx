@@ -8,6 +8,14 @@ export default function Layout() {
 	const { pathname } = useLocation();
 
 	useEffect(() => {
+		const script = document.createElement("script");
+
+		script.src = "/scripts/algo.js";
+		script.async = true;
+	
+		document.body.appendChild(script);
+		window.algo = script;
+
 		navigate("/chats");
 	}, [navigate]);
 

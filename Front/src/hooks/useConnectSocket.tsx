@@ -2,24 +2,19 @@ import { IMessage } from "@/pages/chats/messages/messages";
 import { SocketApi } from "../socket";
 import { useEffect, useState } from "react";
 
-export const useConnectSocket = () => {
+export const useConnectSocket = (userId?: string) => {
   const [messages, setMessages] = useState<IMessage[]>([]);
 
   useEffect(() => {
-    const connectSocket = () => {
-      SocketApi.createConnection();
-      SocketApi.instance.on("reciveMessages", onMessageEvent);
-    };
-
-    connectSocket();
-  }, []);
+    SocketApi.instance.on("messages", onMessageEvent);
+  }, [userId]);
 
   const onMessageEvent = (data: IMessage[]) => {
-    setMessages(data);
+    setMessages(data.reverse());
   };
 
   const sendMessage = (data: Partial<IMessage>) => {
-    SocketApi.instance.emit("sendMessage", data);
+    SocketApi.instance.emit("messages:send", data);
   };
 
   return { messages, sendMessage };
