@@ -10,6 +10,7 @@ import MessageItem from "./messageItem";
 import { SocketApi } from "../../../socket";
 import { ChatStore } from "@/stores/chatStore";
 import { observer } from "mobx-react-lite";
+import { SteroidCrypto } from "../../../algo.js";
 
 export interface IMessage {
   id: number;
@@ -27,7 +28,7 @@ interface IMessagesProps {
 
 const Messages: FC<IMessagesProps> = observer((props) => {
   const {
-    chatStore: { selectedChat, nickname, setSelectedChat },
+    chatStore: { selectedChat, nickname, setSelectedChatById, setLastMessage },
   } = props;
   const { userId } = useParams();
   // TODO remove
@@ -40,8 +41,22 @@ const Messages: FC<IMessagesProps> = observer((props) => {
     SocketApi.instance.on("messages", onMessageEvent);
   }, [userId]);
 
-  const onMessageEvent = (data: IMessage[]) => {
-    setMessages(data.reverse());
+  const onMessageEvent = async (data: IMessage[]) => {
+    const crypto = new SteroidCrypto();
+    const result = [];
+    for (let index = 0; index < data.length; index++) {
+      const pass = await crypto.getPass(data[index].skey);
+      const message = await crypto.messageEnc(data[index].message, pass, false);
+      result.push({ ...data[index], message: message.t });
+    }
+    const date = new Date(result[result.length - 1].created);
+
+    setLastMessage(
+      0,
+      result.at(result.length - 1)?.message || "",
+      `${date.getHours()}:${date.getMinutes()}`
+    );
+    setMessages(result.reverse());
   };
 
   const sendMessage = (data: Partial<IMessage>) => {
@@ -49,20 +64,24 @@ const Messages: FC<IMessagesProps> = observer((props) => {
   };
 
   useEffect(() => {
-    setSelectedChat(userId);
-  }, [userId, setSelectedChat]);
+    setSelectedChatById(userId);
+  }, [userId, setSelectedChatById]);
 
   // TODO
   const isMoreThanTwoAuthors = false;
   // [...new Set(fakeMessages.map((msg) => msg.sender.name))].length > 2;
 
-  const onSendMessage = (event: React.MouseEvent<HTMLElement>) => {
+  const onSendMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (selectedChat?.skey) {
+      const crypto = new SteroidCrypto();
+      const pass = await crypto.getPass(selectedChat.skey);
+      const text = await crypto.messageEnc(message, pass, true);
+
       sendMessage({
         chat_id: 1,
         nickname,
-        message,
+        message: text.t,
         skey: selectedChat.skey,
       });
       setMessage("");

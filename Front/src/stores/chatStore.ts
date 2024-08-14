@@ -17,8 +17,9 @@ export class ChatStore {
       addChat: action,
       setNickname: action,
       removeChats: action,
-      setSelectedChat: action,
       sendMessage: action,
+      setLastMessage: action,
+      setSelectedChatById: action,
     });
   }
 
@@ -26,7 +27,7 @@ export class ChatStore {
     this.chats.push(chat);
   }
 
-  setSelectedChat = (id?: string) => {
+  setSelectedChatById = (id?: string) => {
     if (!id) {
       this.selectedChat = undefined;
       return;
@@ -36,6 +37,13 @@ export class ChatStore {
     if (chat) {
       SocketApi.instance.emit("messages:get", { chat_id: 1, skey: chat.skey });
       this.selectedChat = chat;
+    }
+  };
+
+  setLastMessage = (chatId: number, lastMessage: string, date: string) => {
+    const index = this.chats.findIndex((i) => i.id === chatId);
+    if (index >= 0) {
+      this.chats[index] = { ...this.chats[index], lastMessage, date };
     }
   };
 

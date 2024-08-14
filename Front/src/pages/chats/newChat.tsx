@@ -25,13 +25,12 @@ const NewChat: FC<INewChatProps> = (props) => {
   const handleConnect = async () => {
     const crypto = new SteroidCrypto();
     const skey = await crypto.getSkey(password);
-    
     const chat = {
       id: chatStore.chats.length,
       name,
-      lastMessage: "lastMessage",
+      lastMessage: "",
       unreadMessages: 0,
-      date: "date",
+      date: "",
       skey,
     };
 
@@ -57,34 +56,6 @@ const NewChat: FC<INewChatProps> = (props) => {
       </Header>
 
       <Scrollable>
-        {/* <div className="w-full max-w-2xl mx-auto">
-					<div className="px-4 text-sm text-gray mb-[6px]">
-						CHAT HEADER
-					</div>
-					<Input
-						placeholder="Chat Header"
-						className="md:rounded-[10px] text-[17px] mb-[9px]"
-					/>
-					<div className="px-4 text-sm text-gray">
-						If you change your password, your messages recipient
-						must also change it to suspect the conversation.
-					</div>
-				</div> */}
-
-        {/* <div className="w-full max-w-2xl mx-auto">
-					<div className="px-4 text-sm text-gray mb-[6px]">
-						CHAT ID
-					</div>
-					<Input
-						placeholder="Re-Enter Your Password"
-						className="px-4 md:rounded-[10px] text-[17px] mb-[9px]"
-					/>
-					<div className="px-4 text-sm text-gray">
-						If you change your password, your messages recipient
-						must also change it to suspect the conversation.
-					</div>
-				</div> */}
-
         <div className="w-full max-w-2xl mx-auto">
           <div className="px-4 text-sm text-gray mb-[6px]">MY NICKNAME</div>
           <Input
@@ -95,10 +66,6 @@ const NewChat: FC<INewChatProps> = (props) => {
               setNickname(target.value)
             }
           />
-          {/* <div className="px-4 text-sm text-gray">
-            If you change your password, your messages recipient must also
-            change it to suspect the conversation.
-          </div> */}
         </div>
 
         <div className="w-full max-w-2xl mx-auto">
@@ -128,7 +95,6 @@ const NewChat: FC<INewChatProps> = (props) => {
               setName(target.value)
             }
           />
-          {/* <div className="px-4 text-sm text-gray">Name of the chat</div> */}
         </div>
         {/* 
 				<div className="w-full max-w-2xl mx-auto">
