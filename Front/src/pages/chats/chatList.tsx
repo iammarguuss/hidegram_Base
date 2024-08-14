@@ -14,15 +14,21 @@ import EditBtn from "@/components/editBtn";
 import Scrollable from "@/components/scrollable";
 import ChatItem from "./chatItem";
 import { ChatStore } from "@/stores/chatStore";
+import { useSelector } from "react-redux";
+import { IRootState } from "@/stores/rtk";
 
 interface IChatsProps {
   chatStore: ChatStore;
 }
 
 const Chats: FC<IChatsProps> = observer((props) => {
+  const chatList = useSelector((s: IRootState) => s.chatSlice.messages);
+
+  // TODO REMOVE
   const {
-    chatStore: { chats, removeChats },
+    chatStore: { removeChats },
   } = props;
+
   const [isEdit, setIsEdit] = useState(false);
   const [selectedChatsIds, setSelectedChatsIds] = useState<number[]>([]);
 
@@ -34,7 +40,17 @@ const Chats: FC<IChatsProps> = observer((props) => {
 
   const onEdit = () => {
     setIsEdit((s) => (s ? (setSelectedChatsIds([]), !s) : !s));
-  }
+  };
+
+  const converToArray = (object: any) => {
+    const list = [];
+
+    for (var key in object) {
+      list.push(object[key]);
+    }
+    console.log("list", list);
+    return list;
+  };
 
   return (
     <>
@@ -70,10 +86,10 @@ const Chats: FC<IChatsProps> = observer((props) => {
         </Header>
 
         <Scrollable className="h-[calc(100%-124px)] md:h-[calc(100%-108px)] py-0 gap-0">
-          {chats.map((chat) => {
+          {converToArray(chatList).map((chat) => {
             return (
               <ChatItem
-                key={chat.id}
+                key={chat.chat_id}
                 isEdit={isEdit}
                 setSelectedChats={setSelectedChatsIds}
                 {...chat}

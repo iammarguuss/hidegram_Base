@@ -14,7 +14,7 @@ import PassToExchange from "./pages/change/passToExchange.tsx";
 import WaitingTime from "./pages/change/waitingTime.tsx";
 import Exchange from "./pages/change/exchange.tsx";
 
-import Chats from "./pages/chats/chats.tsx";
+import Chats from "./pages/chats/chatList.tsx";
 import Messages from "./pages/chats/messages/messages.tsx";
 import ChatSettings from "./pages/chats/settings.tsx";
 import NewChat from "./pages/chats/newChat.tsx";
@@ -68,7 +68,7 @@ export const routes = [
         path: "/chats",
         element: <Chats chatStore={chatStore} />,
         children: [
-          { path: ":userId", element: <Messages chatStore={chatStore}/> },
+          { path: ":userId", element: <Messages chatStore={chatStore} /> },
           { path: "chat-settings", element: <ChatSettings /> },
           { path: "new-chat", element: <NewChat chatStore={chatStore} /> },
         ],
@@ -95,4 +95,5 @@ export const routes = [
   },
 ];
 const router = createBrowserRouter(routes);
+
 export default router;

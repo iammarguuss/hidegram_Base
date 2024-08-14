@@ -1,13 +1,17 @@
+import { useDispatch } from "react-redux";
+import { customAlphabet } from "nanoid";
+import { FC, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import BackBtn from "@/components/backBtn";
 import EditBtn from "@/components/editBtn";
 import Input from "@/components/ui/input";
 import Header from "@/components/header";
 import Scrollable from "@/components/scrollable";
 import Button from "@/components/ui/button";
-import { FC, useState } from "react";
 import { ChatStore } from "@/stores/chatStore";
 import { SocketApi } from "@/socket";
-import { useNavigate } from "react-router-dom";
+import { setMessagesByChatId } from "@/stores/slices/chat.js";
 
 import { SteroidCrypto } from "../../algo.js";
 
@@ -15,34 +19,39 @@ interface INewChatProps {
   chatStore: ChatStore;
 }
 
+//TODO REMOVE PROPS
 const NewChat: FC<INewChatProps> = (props) => {
-  const { chatStore } = props;
+  const dispatch = useDispatch();
+
   const navigate = useNavigate();
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const nanoid = customAlphabet("1234567890abcdef", 10);
 
   const handleConnect = async () => {
     const crypto = new SteroidCrypto();
     const skey = await crypto.getSkey(password);
-    const chat = {
-      id: chatStore.chats.length,
+    const roomId = nanoid(5);
+    const newChat = {
+      id: roomId,
       name,
-      lastMessage: "",
+      data: [],
       unreadMessages: 0,
-      date: "",
+      nickname,
       skey,
+      chat_id: 1,
+      password,
     };
 
-    chatStore.setNickname(nickname);
-    chatStore.addChat(chat);
-    navigate(`/chats/${chat.id}`);
+    dispatch(setMessagesByChatId(newChat));
+    navigate(`/chats/${roomId}`);
   };
 
   const onConnect = async () => {
     const crypto = new SteroidCrypto();
     const skey = await crypto.getSkey(password);
-
+    // TODO: Delete hard code chatId
     SocketApi.createConnection({ chatId: 1, skey });
     SocketApi.instance.on("connect", handleConnect);
   };

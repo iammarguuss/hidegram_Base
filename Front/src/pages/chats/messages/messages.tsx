@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import BackBtn from "@/components/backBtn";
@@ -11,6 +11,9 @@ import { SocketApi } from "../../../socket";
 import { ChatStore } from "@/stores/chatStore";
 import { observer } from "mobx-react-lite";
 import { SteroidCrypto } from "../../../algo.js";
+import { useDispatch, useSelector } from "react-redux";
+import { IRootState } from "@/stores/rtk.js";
+import { setMessagesByChatId } from "@/stores/slices/chat.js";
 
 export interface IMessage {
   id: number;
@@ -26,46 +29,52 @@ interface IMessagesProps {
   chatStore: ChatStore;
 }
 
+//TODO REMOVE PROPS
 const Messages: FC<IMessagesProps> = observer((props) => {
-  const {
-    chatStore: { selectedChat, nickname, setSelectedChatById, setLastMessage },
-  } = props;
   const { userId } = useParams();
-  // TODO remove
-  // const { messages, sendMessage } = useMessagesSocket(userId);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<IMessage[]>([]);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const roomList = useSelector((s: IRootState) => s.chatSlice.messages);
+
+  const currentRoom = useMemo(() => {
+    return roomList[userId!];
+  }, [userId, roomList]);
+
+  useEffect(() => {
+    const currentChat = roomList[userId!];
+    if (currentChat) {
+      SocketApi.instance.emit("messages:get", {
+        chat_id: 1,
+        skey: currentChat.skey,
+      });
+      return;
+    }
+    navigate("/chats");
+  }, [userId]);
 
   useEffect(() => {
     SocketApi.instance.on("messages", onMessageEvent);
   }, [userId]);
 
   const onMessageEvent = async (data: IMessage[]) => {
+    if (!data.length) return;
     const crypto = new SteroidCrypto();
     const result = [];
+    const pass = await crypto.getPass(currentRoom.password);
+
     for (let index = 0; index < data.length; index++) {
-      const pass = await crypto.getPass(data[index].skey);
       const message = await crypto.messageEnc(data[index].message, pass, false);
       result.push({ ...data[index], message: message.t });
     }
-    const date = new Date(result[result.length - 1].created);
 
-    setLastMessage(
-      0,
-      result.at(result.length - 1)?.message || "",
-      `${date.getHours()}:${date.getMinutes()}`
-    );
-    setMessages(result.reverse());
+    dispatch(setMessagesByChatId({ ...currentRoom, data: result.reverse() }));
   };
 
   const sendMessage = (data: Partial<IMessage>) => {
     SocketApi.instance.emit("messages:send", data);
   };
-
-  useEffect(() => {
-    setSelectedChatById(userId);
-  }, [userId, setSelectedChatById]);
 
   // TODO
   const isMoreThanTwoAuthors = false;
@@ -73,21 +82,20 @@ const Messages: FC<IMessagesProps> = observer((props) => {
 
   const onSendMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (selectedChat?.skey) {
-      const crypto = new SteroidCrypto();
-      const pass = await crypto.getPass(selectedChat.skey);
-      const text = await crypto.messageEnc(message, pass, true);
 
-      sendMessage({
-        chat_id: 1,
-        nickname,
-        message: text.t,
-        skey: selectedChat.skey,
-      });
-      setMessage("");
-    } else {
-      navigate("/chats");
-    }
+    const crypto = new SteroidCrypto();
+
+    const pass = await crypto.getPass(currentRoom.password);
+
+    const text = await crypto.messageEnc(message, pass, true);
+
+    sendMessage({
+      chat_id: 1,
+      nickname: currentRoom.nickname,
+      message: text.t,
+      skey: currentRoom.skey,
+    });
+    setMessage("");
   };
 
   return (
@@ -98,23 +106,22 @@ const Messages: FC<IMessagesProps> = observer((props) => {
 
           <div className={twMerge("text-center md:text-left")}>
             <h1 className="text-lg font-medium md:text-base">
-              {selectedChat?.name || nickname}
+              {currentRoom?.name || currentRoom?.nickname}
             </h1>
             <p className="text-[13px] md:text-[14px] text-gray">
-              {`ID: ${selectedChat?.id}`}
+              {`ID: ${currentRoom?.chat_id}`}
             </p>
           </div>
 
           <EditBtn className="md:hidden" />
         </Header>
       </NavLink>
-
       <Scrollable className="h-[calc(100%-112px)] md:h-[calc(100%-110px)] p-[10px]  flex-col-reverse gap-0 after:content-[''] after:pt-5 after:h-[20px]">
-        {messages.map((message, i) => {
+        {currentRoom?.data.map((message, i) => {
           const senderName = message.nickname;
           const isSameAuthor = {
-            prev: senderName === messages[i - 1]?.nickname,
-            next: senderName === messages[i + 1]?.nickname,
+            prev: senderName === currentRoom.data[i - 1]?.nickname,
+            next: senderName === currentRoom.data[i + 1]?.nickname,
           };
 
           return (
