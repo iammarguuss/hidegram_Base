@@ -51,7 +51,7 @@ const chatSlice = createSlice({
       state.messages[chatId] = action.payload;
     },
 
-    // TODO I did not text this func
+    // TODO I did not test this func
     addNewMessageByChatId: (state, action) => {
       const chatId = action.payload["chat_id"];
 
