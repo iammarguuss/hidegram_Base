@@ -50,9 +50,11 @@ const ChatItem: FC<IChatItemProps> = (props) => {
         <div className="col-span-2 text-right text-gray text-[13px] relative top-[-4px]">
           {date}
         </div>
-        <div className="relative bottom-[-4px] min-w-[20px] min-h-[20px] max-h-[20px] flex text-sm justify-self-end place-content-center bg-blue rounded-full">
-          <span className="leading-normal px-1.5">{unreadMessages}</span>
-        </div>
+        {unreadMessages > 0 && (
+          <div className="relative bottom-[-4px] min-w-[20px] min-h-[20px] max-h-[20px] flex text-sm justify-self-end place-content-center bg-blue rounded-full">
+            <span className="leading-normal px-1.5">{unreadMessages}</span>
+          </div>
+        )}
       </Wrapper>
       <Divider
         className={twMerge(

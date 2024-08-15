@@ -8,12 +8,12 @@ import Input from "@/components/ui/input";
 import Scrollable from "@/components/scrollable";
 import MessageItem from "./messageItem";
 import { SocketApi } from "../../../socket";
-import { ChatStore } from "@/stores/chatStore";
-import { observer } from "mobx-react-lite";
-import { SteroidCrypto } from "../../../algo.js";
 import { useDispatch, useSelector } from "react-redux";
 import { IRootState } from "@/stores/rtk.js";
-import { setMessagesByChatId } from "@/stores/slices/chat.js";
+import {
+  setLastEnterTimestamp,
+  setMessagesByChatId,
+} from "@/stores/slices/chat.js";
 
 export interface IMessage {
   id: number;
@@ -25,12 +25,7 @@ export interface IMessage {
   algo?: number;
 }
 
-interface IMessagesProps {
-  chatStore: ChatStore;
-}
-
-//TODO REMOVE PROPS
-const Messages: FC<IMessagesProps> = observer((props) => {
+const Messages: FC = () => {
   const { userId } = useParams();
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -41,6 +36,10 @@ const Messages: FC<IMessagesProps> = observer((props) => {
   const currentRoom = useMemo(() => {
     return roomList[userId!];
   }, [userId, roomList]);
+
+  useEffect(() => {
+    dispatch(setLastEnterTimestamp({ ...currentRoom, data: Date.now() }));
+  }, [userId]);
 
   useEffect(() => {
     const currentChat = roomList[userId!];
@@ -60,7 +59,7 @@ const Messages: FC<IMessagesProps> = observer((props) => {
 
   const onMessageEvent = async (data: IMessage[]) => {
     if (!data.length) return;
-    const crypto = new SteroidCrypto();
+    const crypto = new window.SteroidCrypto();
     const result = [];
     const pass = await crypto.getPass(currentRoom.password);
 
@@ -83,10 +82,8 @@ const Messages: FC<IMessagesProps> = observer((props) => {
   const onSendMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
 
-    const crypto = new SteroidCrypto();
-
+    const crypto = new window.SteroidCrypto();
     const pass = await crypto.getPass(currentRoom.password);
-
     const text = await crypto.messageEnc(message, pass, true);
 
     sendMessage({
@@ -168,6 +165,6 @@ const Messages: FC<IMessagesProps> = observer((props) => {
       </form>
     </>
   );
-});
+};
 
 export default Messages;

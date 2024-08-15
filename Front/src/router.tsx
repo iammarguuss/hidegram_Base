@@ -33,9 +33,6 @@ import Notifications from "./pages/settings/notifications.tsx";
 import Feedback from "./pages/settings/feedback.tsx";
 import BugReport from "./pages/settings/bugReport.tsx";
 import ChatId from "./pages/change/chatId.tsx";
-import { ChatStore } from "./stores/chatStore.ts";
-
-const chatStore = new ChatStore();
 
 export const routes = [
   {
@@ -66,11 +63,11 @@ export const routes = [
       },
       {
         path: "/chats",
-        element: <Chats chatStore={chatStore} />,
+        element: <Chats />,
         children: [
-          { path: ":userId", element: <Messages chatStore={chatStore} /> },
+          { path: ":userId", element: <Messages /> },
           { path: "chat-settings", element: <ChatSettings /> },
-          { path: "new-chat", element: <NewChat chatStore={chatStore} /> },
+          { path: "new-chat", element: <NewChat /> },
         ],
       },
       {

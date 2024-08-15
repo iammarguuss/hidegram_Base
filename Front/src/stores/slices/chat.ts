@@ -1,7 +1,7 @@
 import { IMessage } from "@/pages/chats/messages/messages";
 import { createSlice } from "@reduxjs/toolkit";
 
-interface ChatStore {
+export interface ChatStore {
   [key: string]: {
     name: string;
     data: IMessage[];
@@ -10,6 +10,7 @@ interface ChatStore {
     skey: number;
     nickname: string;
     password: string;
+    timestamp: number;
   };
 }
 
@@ -25,6 +26,7 @@ const chatSlice = createSlice({
         skey: 0,
         nickname: "Alex",
         password: "1234",
+        timestamp: Date.now(),
         data: [
           {
             id: 0,
@@ -45,6 +47,13 @@ const chatSlice = createSlice({
 
       if (state.messages[chatId]) {
         state.messages[chatId].data = action.payload.data;
+        state.messages[chatId].unreadMessages = state.messages[
+          chatId
+        ].data.filter(
+          (i) =>
+            new Date(i.created).getTime() > state.messages[chatId].timestamp
+        ).length;
+
         return;
       }
 
@@ -61,9 +70,21 @@ const chatSlice = createSlice({
         action.payload
       );
     },
+
+    setLastEnterTimestamp: (state, action) => {
+      const chatId = action.payload.id;
+
+      if (!state.messages[chatId]) return alert("Current chat could not found");
+
+      state.messages[chatId].timestamp = action.payload.data;
+    },
   },
 });
 
-export const { setMessagesByChatId, addNewMessageByChatId } = chatSlice.actions;
+export const {
+  setMessagesByChatId,
+  addNewMessageByChatId,
+  setLastEnterTimestamp,
+} = chatSlice.actions;
 
 export default chatSlice;

@@ -247,4 +247,6 @@ class SteroidCrypto {
 
 }
 
-window.crypto = SteroidCrypto;
+(() => {
+    window.SteroidCrypto = SteroidCrypto;
+})()

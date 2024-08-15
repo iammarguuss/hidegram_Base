@@ -9,18 +9,10 @@ import Input from "@/components/ui/input";
 import Header from "@/components/header";
 import Scrollable from "@/components/scrollable";
 import Button from "@/components/ui/button";
-import { ChatStore } from "@/stores/chatStore";
 import { SocketApi } from "@/socket";
 import { setMessagesByChatId } from "@/stores/slices/chat.js";
 
-import { SteroidCrypto } from "../../algo.js";
-
-interface INewChatProps {
-  chatStore: ChatStore;
-}
-
-//TODO REMOVE PROPS
-const NewChat: FC<INewChatProps> = (props) => {
+const NewChat: FC = () => {
   const dispatch = useDispatch();
 
   const navigate = useNavigate();
@@ -30,7 +22,7 @@ const NewChat: FC<INewChatProps> = (props) => {
   const nanoid = customAlphabet("1234567890abcdef", 10);
 
   const handleConnect = async () => {
-    const crypto = new SteroidCrypto();
+    const crypto = new window.SteroidCrypto();
     const skey = await crypto.getSkey(password);
     const roomId = nanoid(5);
     const newChat = {
@@ -49,7 +41,7 @@ const NewChat: FC<INewChatProps> = (props) => {
   };
 
   const onConnect = async () => {
-    const crypto = new SteroidCrypto();
+    const crypto = new window.SteroidCrypto();
     const skey = await crypto.getSkey(password);
     // TODO: Delete hard code chatId
     SocketApi.createConnection({ chatId: 1, skey });
@@ -130,8 +122,27 @@ export default NewChat;
 
 // TODO connect from git
 declare global {
+  interface Constructable<T> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    new (...args: any): T;
+  }
+
+  interface ISteroidCrypto {
+    getSkey: (value: string) => number;
+    getPass: (value: string) => string;
+    messageEnc: (
+      text: string,
+      password: string,
+      isEncrypt: boolean,
+      algo?: number
+    ) => {
+      s: number;
+      t: string;
+      v: number;
+    };
+  }
+
   interface Window {
-    SteroidCrypto: any;
-    algo: any;
+    SteroidCrypto: Constructable<ISteroidCrypto>;
   }
 }

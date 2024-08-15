@@ -1,6 +1,5 @@
 import { FC, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { observer } from "mobx-react-lite";
 import SearchIcon from "/search-icon.svg";
 import NewChatIcon from "/icon-new-chat.svg";
 
@@ -13,27 +12,21 @@ import Header from "@/components/header";
 import EditBtn from "@/components/editBtn";
 import Scrollable from "@/components/scrollable";
 import ChatItem from "./chatItem";
-import { ChatStore } from "@/stores/chatStore";
 import { useSelector } from "react-redux";
 import { IRootState } from "@/stores/rtk";
+import { ChatStore } from "@/stores/slices/chat";
 
-interface IChatsProps {
-  chatStore: ChatStore;
-}
-
-const Chats: FC<IChatsProps> = observer((props) => {
+const Chats: FC = () => {
   const chatList = useSelector((s: IRootState) => s.chatSlice.messages);
-
-  // TODO REMOVE
-  const {
-    chatStore: { removeChats },
-  } = props;
 
   const [isEdit, setIsEdit] = useState(false);
   const [selectedChatsIds, setSelectedChatsIds] = useState<number[]>([]);
 
+  console.log({ selectedChatsIds });
+
   const onDelete = () => {
-    removeChats(selectedChatsIds);
+    // TODO remove chats if needed
+    // removeChats(selectedChatsIds);
     setSelectedChatsIds([]);
     setIsEdit(false);
   };
@@ -42,13 +35,12 @@ const Chats: FC<IChatsProps> = observer((props) => {
     setIsEdit((s) => (s ? (setSelectedChatsIds([]), !s) : !s));
   };
 
-  const converToArray = (object: any) => {
+  const converToArray = (object: ChatStore) => {
     const list = [];
 
-    for (var key in object) {
+    for (const key in object) {
       list.push(object[key]);
     }
-    console.log("list", list);
     return list;
   };
 
@@ -92,6 +84,13 @@ const Chats: FC<IChatsProps> = observer((props) => {
                 key={chat.chat_id}
                 isEdit={isEdit}
                 setSelectedChats={setSelectedChatsIds}
+                lastMessage={chat.data?.length > 0 ? chat.data[0].message : ""}
+                id={chat.chat_id}
+                date={
+                  chat.data?.length > 0
+                    ? formatDateString(chat.data[0].created)
+                    : ""
+                }
                 {...chat}
               />
             );
@@ -111,6 +110,10 @@ const Chats: FC<IChatsProps> = observer((props) => {
       </ContentWrapper>
     </>
   );
-});
+};
 
 export default Chats;
+
+const formatDateString = (date: string): string => {
+  return new Date(date).toLocaleTimeString();
+};
