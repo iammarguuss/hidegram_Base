@@ -10,6 +10,7 @@ export interface ChatStore {
     skey: number;
     nickname: string;
     password: string;
+    roomId: string;
     timestamp: number;
   };
 }
@@ -17,33 +18,11 @@ export interface ChatStore {
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
-    messages: {
-      "9999": {
-        id: "85475",
-        name: "Test",
-        unreadMessages: 0,
-        chat_id: 9999,
-        skey: 0,
-        nickname: "Alex",
-        password: "1234",
-        timestamp: Date.now(),
-        data: [
-          {
-            id: 0,
-            chat_id: 9999,
-            nickname: "TEST 0",
-            message: "TEST 0",
-            skey: 0,
-            algo: 0,
-            created: "2024-08-14T10:57:41.311Z",
-          },
-        ],
-      },
-    } as ChatStore,
+    messages: {} as ChatStore,
   },
   reducers: {
     setMessagesByChatId: (state, action) => {
-      const chatId = action.payload.id;
+      const chatId = action.payload.roomId;
 
       if (state.messages[chatId]) {
         state.messages[chatId].data = action.payload.data;

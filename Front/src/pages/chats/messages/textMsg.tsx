@@ -10,8 +10,6 @@ type Props = {
 };
 
 function TextMsg({ message, isName, isMe, isInBetween }: Props) {
-  console.log({ TextMsg: message });
-
   return (
     <>
       {isName && (

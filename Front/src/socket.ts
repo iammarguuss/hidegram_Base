@@ -4,7 +4,7 @@ export class SocketApi {
   private static socket: Socket | null = null;
 
   static createConnection({ chatId, skey }: { chatId: number; skey: number }) {
-    this.socket = io("http://localhost:3000/", {
+    this.socket = io(import.meta.env.VITE_SERVER_URL, {
       query: {
         chatId,
         skey,

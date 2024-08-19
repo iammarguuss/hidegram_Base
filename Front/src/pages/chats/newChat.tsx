@@ -34,6 +34,7 @@ const NewChat: FC = () => {
       skey,
       chat_id: 1,
       password,
+      roomId,
     };
 
     dispatch(setMessagesByChatId(newChat));
@@ -60,7 +61,7 @@ const NewChat: FC = () => {
         <div className="w-full max-w-2xl mx-auto">
           <div className="px-4 text-sm text-gray mb-[6px]">MY NICKNAME</div>
           <Input
-            placeholder="Enter Your Master Password"
+            placeholder="Enter Your Nickname"
             className="md:rounded-[10px] text-[17px] mb-[9px]"
             value={nickname}
             onChange={({ target }: React.ChangeEvent<HTMLInputElement>) =>
@@ -89,7 +90,7 @@ const NewChat: FC = () => {
         <div className="w-full max-w-2xl mx-auto">
           <div className="px-4 text-sm text-gray mb-[6px]">CHAT HEADER</div>
           <Input
-            placeholder="Enter Your Master Password"
+            placeholder="Enter Your Chat Header"
             className="md:rounded-[10px] text-[17px] mb-[9px]"
             value={name}
             onChange={({ target }: React.ChangeEvent<HTMLInputElement>) =>

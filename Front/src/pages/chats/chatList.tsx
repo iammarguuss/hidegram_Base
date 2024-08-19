@@ -20,19 +20,14 @@ const Chats: FC = () => {
   const chatList = useSelector((s: IRootState) => s.chatSlice.messages);
 
   const [isEdit, setIsEdit] = useState(false);
-  const [selectedChatsIds, setSelectedChatsIds] = useState<number[]>([]);
-
-  console.log({ selectedChatsIds });
 
   const onDelete = () => {
-    // TODO remove chats if needed
-    // removeChats(selectedChatsIds);
-    setSelectedChatsIds([]);
     setIsEdit(false);
   };
 
   const onEdit = () => {
-    setIsEdit((s) => (s ? (setSelectedChatsIds([]), !s) : !s));
+    // TODO
+    console.log("onEdit");
   };
 
   const converToArray = (object: ChatStore) => {
@@ -81,9 +76,9 @@ const Chats: FC = () => {
           {converToArray(chatList).map((chat) => {
             return (
               <ChatItem
-                key={chat.chat_id}
+                key={chat.roomId}
                 isEdit={isEdit}
-                setSelectedChats={setSelectedChatsIds}
+                setSelectedChats={() => console.log("setSelectedChatsIds")}
                 lastMessage={chat.data?.length > 0 ? chat.data[0].message : ""}
                 id={chat.chat_id}
                 date={
