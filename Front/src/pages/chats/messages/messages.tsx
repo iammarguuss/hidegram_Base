@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import BackBtn from "@/components/backBtn";
@@ -13,6 +13,7 @@ import { IRootState } from "@/stores/rtk.js";
 import {
   setLastEnterTimestamp,
   setMessagesByChatId,
+  setSelectedRoom,
 } from "@/stores/slices/chat.js";
 
 export interface IMessage {
@@ -33,9 +34,7 @@ const Messages: FC = () => {
 
   const roomList = useSelector((s: IRootState) => s.chatSlice.messages);
 
-  const currentRoom = useMemo(() => {
-    return roomList[userId!];
-  }, [userId, roomList]);
+  const currentRoom = roomList[userId!];
 
   useEffect(() => {
     dispatch(setLastEnterTimestamp({ ...currentRoom, data: Date.now() }));
@@ -58,7 +57,8 @@ const Messages: FC = () => {
   }, [userId]);
 
   const onMessageEvent = async (data: IMessage[]) => {
-    if (!data.length) return;
+    if (!data.length || !currentRoom.password) return;
+
     const crypto = new window.SteroidCrypto();
     const result = [];
     const pass = await crypto.getPass(currentRoom.password);
@@ -95,11 +95,17 @@ const Messages: FC = () => {
     setMessage("");
   };
 
+  const onBack = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    dispatch(setSelectedRoom(null));
+  };
+
   return (
     <>
       <NavLink to="/chats/chat-settings">
         <Header>
-          <BackBtn className="md:hidden" />
+          <BackBtn className="md:hidden" onClick={onBack} />
 
           <div className={twMerge("text-center md:text-left")}>
             <h1 className="text-lg font-medium md:text-base">
@@ -155,7 +161,10 @@ const Messages: FC = () => {
           Send message
         </button>
 
-        <button className="md:hidden h-[38px] mt-[6px] mr-[12px] ml-2">
+        <button
+          className="md:hidden h-[38px] mt-[6px] mr-[12px] ml-2"
+          onClick={onSendMessage}
+        >
           <img
             src="/send-button.svg"
             alt="send message icon"

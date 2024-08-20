@@ -1,24 +1,26 @@
 import { IMessage } from "@/pages/chats/messages/messages";
 import { createSlice } from "@reduxjs/toolkit";
 
+export interface IChat {
+  name: string;
+  data: IMessage[];
+  unreadMessages: number;
+  chat_id: number;
+  skey: number;
+  nickname: string;
+  password: string;
+  roomId: string;
+  timestamp: number;
+}
 export interface ChatStore {
-  [key: string]: {
-    name: string;
-    data: IMessage[];
-    unreadMessages: number;
-    chat_id: number;
-    skey: number;
-    nickname: string;
-    password: string;
-    roomId: string;
-    timestamp: number;
-  };
+  [key: string]: IChat;
 }
 
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
     messages: {} as ChatStore,
+    selectedRoom: null,
   },
   reducers: {
     setMessagesByChatId: (state, action) => {
@@ -57,6 +59,10 @@ const chatSlice = createSlice({
 
       state.messages[chatId].timestamp = action.payload.data;
     },
+
+    setSelectedRoom: (state, action) => {
+      state.selectedRoom = action.payload;
+    },
   },
 });
 
@@ -64,6 +70,7 @@ export const {
   setMessagesByChatId,
   addNewMessageByChatId,
   setLastEnterTimestamp,
+  setSelectedRoom,
 } = chatSlice.actions;
 
 export default chatSlice;
