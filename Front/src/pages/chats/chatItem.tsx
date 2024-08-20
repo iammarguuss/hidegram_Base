@@ -2,24 +2,25 @@ import { NavLink, useLocation } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import Divider from "@/components/ui/divider";
 import { FC } from "react";
-import { IChat } from "@/interfaces/chats";
+import { IChat, setSelectedRoom } from "@/stores/slices/chat";
+import { useDispatch } from "react-redux";
+import { formatDateString } from "@/utils/date";
 
-interface IChatItemProps extends IChat {
+interface IChatItemProps {
+  chat: IChat;
   isEdit: boolean;
   setSelectedChats: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 const ChatItem: FC<IChatItemProps> = (props) => {
-  const {
-    name,
-    id,
-    date,
-    lastMessage,
-    unreadMessages,
-    isEdit,
-    setSelectedChats,
-  } = props;
+  const { chat, isEdit, setSelectedChats } = props;
   const { pathname } = useLocation();
+  const { name, chat_id, unreadMessages, roomId } = chat;
+  const dispatch = useDispatch();
+
+  const lastMessage = chat.data?.length > 0 ? chat.data[0].message : "";
+  const date =
+    chat.data?.length > 0 ? formatDateString(chat.data[0].created) : "";
 
   function checkboxChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = Number(e.target.value);
@@ -28,15 +29,15 @@ const ChatItem: FC<IChatItemProps> = (props) => {
       s.includes(value) ? s.filter((id) => id !== value) : [...s, value]
     );
   }
-
+  
   return (
-    <>
-      <Wrapper isEdit={isEdit} id={id}>
+    <div onClick={() => dispatch(setSelectedRoom(roomId))}>
+      <Wrapper isEdit={isEdit} id={roomId}>
         {isEdit && (
           <div className="row-span-2 place-self-center">
             <input
               type="checkbox"
-              value={id}
+              value={chat_id}
               onChange={checkboxChange}
               className="bg-black rounded-full text-blue size-5 focus:ring-offset-0 focus:ring-0"
             />
@@ -58,11 +59,11 @@ const ChatItem: FC<IChatItemProps> = (props) => {
       </Wrapper>
       <Divider
         className={twMerge(
-          pathname.includes(`chats/${id}`) && "invisible",
-          pathname.includes(`chats/${id + 1}`) && "invisible"
+          pathname.includes(`chats/${roomId}`) && "invisible",
+          pathname.includes(`chats/${roomId + 1}`) && "invisible"
         )}
       />
-    </>
+    </div>
   );
 };
 export default ChatItem;
@@ -70,7 +71,7 @@ export default ChatItem;
 type WrapperProps = {
   children: React.ReactNode;
   isEdit: boolean;
-  id: number;
+  id: string;
 };
 function Wrapper({ children, isEdit, id }: WrapperProps) {
   const { pathname } = useLocation();

@@ -4,7 +4,6 @@ import SearchIcon from "/search-icon.svg";
 import NewChatIcon from "/icon-new-chat.svg";
 
 import SidebarWrapper from "@/components/sidebarWrapper";
-import ContentWrapper from "@/components/contentWrapper";
 import Menu from "@/components/menu/menu";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
@@ -15,10 +14,12 @@ import ChatItem from "./chatItem";
 import { useSelector } from "react-redux";
 import { IRootState } from "@/stores/rtk";
 import { ChatStore } from "@/stores/slices/chat";
+import ContentWrapper from "@/components/contentWrapper";
 
 const Chats: FC = () => {
   const chatList = useSelector((s: IRootState) => s.chatSlice.messages);
-
+  const selectedRoom = useSelector((s: IRootState) => s.chatSlice.selectedRoom);
+  
   const [isEdit, setIsEdit] = useState(false);
 
   const onDelete = () => {
@@ -79,14 +80,7 @@ const Chats: FC = () => {
                 key={chat.roomId}
                 isEdit={isEdit}
                 setSelectedChats={() => console.log("setSelectedChatsIds")}
-                lastMessage={chat.data?.length > 0 ? chat.data[0].message : ""}
-                id={chat.chat_id}
-                date={
-                  chat.data?.length > 0
-                    ? formatDateString(chat.data[0].created)
-                    : ""
-                }
-                {...chat}
+                chat={chat}
               />
             );
           })}
@@ -100,7 +94,7 @@ const Chats: FC = () => {
         )}
       </SidebarWrapper>
 
-      <ContentWrapper>
+      <ContentWrapper showContent={!!selectedRoom}>
         <Outlet />
       </ContentWrapper>
     </>
@@ -108,7 +102,3 @@ const Chats: FC = () => {
 };
 
 export default Chats;
-
-const formatDateString = (date: string): string => {
-  return new Date(date).toLocaleTimeString();
-};
