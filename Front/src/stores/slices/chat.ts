@@ -1,11 +1,11 @@
 import { IMessage } from "@/pages/chats/messages/messages";
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface IChat {
   name: string;
   data: IMessage[];
   unreadMessages: number;
-  chat_id: number;
+  chatId: number;
   skey: number;
   nickname: string;
   password: string;
@@ -16,14 +16,19 @@ export interface ChatStore {
   [key: string]: IChat;
 }
 
+interface IChatState {
+  messages: ChatStore;
+  selectedRoom: string | null;
+}
+
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
     messages: {} as ChatStore,
     selectedRoom: null,
-  },
+  } as IChatState,
   reducers: {
-    setMessagesByChatId: (state, action) => {
+    setMessagesByChatId: (state, action: PayloadAction<IChat>) => {
       const chatId = action.payload.roomId;
 
       if (state.messages[chatId]) {
@@ -43,7 +48,7 @@ const chatSlice = createSlice({
 
     // TODO I did not test this func
     addNewMessageByChatId: (state, action) => {
-      const chatId = action.payload["chat_id"];
+      const chatId = action.payload["chatId"];
 
       if (!state.messages[chatId]) return alert("Current chat could not found");
 
@@ -52,15 +57,18 @@ const chatSlice = createSlice({
       );
     },
 
-    setLastEnterTimestamp: (state, action) => {
-      const chatId = action.payload.id;
+    setLastEnterTimestamp: (
+      state,
+      action: PayloadAction<{ roomId: string; data: number }>
+    ) => {
+      const roomId = action.payload.roomId;
 
-      if (!state.messages[chatId]) return alert("Current chat could not found");
+      if (!state.messages[roomId]) return alert("Current chat could not found");
 
-      state.messages[chatId].timestamp = action.payload.data;
+      state.messages[roomId].timestamp = action.payload.data;
     },
 
-    setSelectedRoom: (state, action) => {
+    setSelectedRoom: (state, action: PayloadAction<string | null>) => {
       state.selectedRoom = action.payload;
     },
   },

@@ -15,7 +15,7 @@ interface IChatItemProps {
 const ChatItem: FC<IChatItemProps> = (props) => {
   const { chat, isEdit, setSelectedChats } = props;
   const { pathname } = useLocation();
-  const { name, chat_id, unreadMessages, roomId } = chat;
+  const { name, chatId, unreadMessages, roomId } = chat;
   const dispatch = useDispatch();
 
   const lastMessage = chat.data?.length > 0 ? chat.data[0].message : "";
@@ -37,7 +37,7 @@ const ChatItem: FC<IChatItemProps> = (props) => {
           <div className="row-span-2 place-self-center">
             <input
               type="checkbox"
-              value={chat_id}
+              value={chatId}
               onChange={checkboxChange}
               className="bg-black rounded-full text-blue size-5 focus:ring-offset-0 focus:ring-0"
             />
