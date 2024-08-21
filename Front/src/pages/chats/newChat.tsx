@@ -11,6 +11,7 @@ import Scrollable from "@/components/scrollable";
 import Button from "@/components/ui/button";
 import { SocketApi } from "@/socket";
 import { setMessagesByChatId } from "@/stores/slices/chat.js";
+import { randomChatId } from "@/utils/helpers";
 
 const NewChat: FC = () => {
   const dispatch = useDispatch();
@@ -19,6 +20,7 @@ const NewChat: FC = () => {
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [chatId, setChatId] = useState<number | null>(null);
   const nanoid = customAlphabet("1234567890abcdef", 10);
 
   const handleConnect = async () => {
@@ -32,9 +34,10 @@ const NewChat: FC = () => {
       unreadMessages: 0,
       nickname,
       skey,
-      chat_id: 1,
+      chatId: chatId!,
       password,
       roomId,
+      timestamp: Date.now()
     };
 
     dispatch(setMessagesByChatId(newChat));
@@ -44,8 +47,13 @@ const NewChat: FC = () => {
   const onConnect = async () => {
     const crypto = new window.SteroidCrypto();
     const skey = await crypto.getSkey(password);
-    // TODO: Delete hard code chatId
-    SocketApi.createConnection({ chatId: 1, skey });
+    const newChatId = chatId || randomChatId();
+
+    if (!chatId) {
+      setChatId(newChatId);
+    }
+
+    SocketApi.createConnection({ chatId: newChatId, skey });
     SocketApi.instance.on("connect", handleConnect);
   };
 
@@ -98,6 +106,19 @@ const NewChat: FC = () => {
             }
           />
         </div>
+
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="px-4 text-sm text-gray mb-[6px]">CHAT ID</div>
+          <Input
+            placeholder="Enter the chat ID for an existing chat or leave empty for a new chat"
+            className="md:rounded-[10px] text-[17px] mb-[9px]"
+            value={chatId || ""}
+            onChange={({ target }: React.ChangeEvent<HTMLInputElement>) =>
+              setChatId(parseInt(target.value))
+            }
+          />
+        </div>
+
         {/* 
 				<div className="w-full max-w-2xl mx-auto">
 					<div className="px-4 text-sm text-gray mb-[6px]">

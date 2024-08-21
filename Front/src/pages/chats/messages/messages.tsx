@@ -18,6 +18,16 @@ import {
 
 export interface IMessage {
   id: number;
+  chatId: number;
+  nickname: string;
+  message: string;
+  created: string;
+  skey: number;
+  algo?: number;
+}
+
+export interface IMessageBackend {
+  id: number;
   chat_id: number;
   nickname: string;
   message: string;
@@ -37,14 +47,16 @@ const Messages: FC = () => {
   const currentRoom = roomList[userId!];
 
   useEffect(() => {
-    dispatch(setLastEnterTimestamp({ ...currentRoom, data: Date.now() }));
+    dispatch(
+      setLastEnterTimestamp({ roomId: currentRoom.roomId, data: Date.now() })
+    );
   }, [userId]);
 
   useEffect(() => {
     const currentChat = roomList[userId!];
     if (currentChat) {
       SocketApi.instance.emit("messages:get", {
-        chat_id: 1,
+        chat_id: currentChat.chatId,
         skey: currentChat.skey,
       });
       return;
@@ -56,28 +68,36 @@ const Messages: FC = () => {
     SocketApi.instance.on("messages", onMessageEvent);
   }, [userId]);
 
-  const onMessageEvent = async (data: IMessage[]) => {
+  const onMessageEvent = async (data: IMessageBackend[]) => {
     if (!data.length || !currentRoom.password) return;
 
     const crypto = new window.SteroidCrypto();
-    const result = [];
+    const result: IMessage[] = [];
     const pass = await crypto.getPass(currentRoom.password);
 
     for (let index = 0; index < data.length; index++) {
-      const message = await crypto.messageEnc(data[index].message, pass, false);
-      result.push({ ...data[index], message: message.t });
+      const current = data[index];
+      const message = await crypto.messageEnc(current.message, pass, false);
+      result.push({
+        id: current.id,
+        chatId: current.chat_id,
+        nickname: current.nickname,
+        message: message.t,
+        created: current.created,
+        skey: current.skey,
+        algo: current.algo,
+      });
     }
 
     dispatch(setMessagesByChatId({ ...currentRoom, data: result.reverse() }));
   };
 
-  const sendMessage = (data: Partial<IMessage>) => {
+  const sendMessage = (data: Partial<IMessageBackend>) => {
     SocketApi.instance.emit("messages:send", data);
   };
 
-  // TODO
-  const isMoreThanTwoAuthors = false;
-  // [...new Set(fakeMessages.map((msg) => msg.sender.name))].length > 2;
+  const isMoreThanTwoAuthors =
+    [...new Set(currentRoom?.data.map((msg) => msg.nickname))].length > 2;
 
   const onSendMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -87,7 +107,7 @@ const Messages: FC = () => {
     const text = await crypto.messageEnc(message, pass, true);
 
     sendMessage({
-      chat_id: 1,
+      chat_id: currentRoom.chatId,
       nickname: currentRoom.nickname,
       message: text.t,
       skey: currentRoom.skey,
@@ -112,7 +132,7 @@ const Messages: FC = () => {
               {currentRoom?.name || currentRoom?.nickname}
             </h1>
             <p className="text-[13px] md:text-[14px] text-gray">
-              {`ID: ${currentRoom?.chat_id}`}
+              {`ID: ${currentRoom?.chatId}`}
             </p>
           </div>
 
@@ -133,6 +153,7 @@ const Messages: FC = () => {
               message={message}
               isMoreThanTwoAuthors={isMoreThanTwoAuthors}
               isSameAuthor={isSameAuthor}
+              nickname={currentRoom.nickname}
             />
           );
         })}

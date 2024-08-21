@@ -1,8 +1,10 @@
+import { FC } from "react";
 import { twMerge } from "tailwind-merge";
-// import ImageMsg from "./imageMsg";
-// import FileMsg from "./fileMsg";
+
 import TextMsg from "./textMsg";
 import { IMessage } from "./messages";
+// import ImageMsg from "./imageMsg";
+// import FileMsg from "./fileMsg";
 
 export type Message = {
   id: string;
@@ -20,16 +22,17 @@ export type Message = {
   isRead: boolean;
 };
 
-type Props = {
+interface IMessageItemProps {
   message: IMessage;
   isMoreThanTwoAuthors: boolean;
   isSameAuthor: { prev: boolean; next: boolean };
-};
+  nickname: string;
+}
 
-function MessageItem({ message, isMoreThanTwoAuthors, isSameAuthor }: Props) {
-  const isMe = message.nickname === "Bob";
+const MessageItem: FC<IMessageItemProps> = (props) => {
+  const { message, isMoreThanTwoAuthors, isSameAuthor, nickname } = props;
+  const isMe = message.nickname === nickname;
   const isName = isMoreThanTwoAuthors && !isMe && !isSameAuthor.next;
-
   const isFirstMsg = isSameAuthor.prev && !isSameAuthor.next;
   const isLastMsg = !isSameAuthor.prev && isSameAuthor.next;
   const isInBetween = isSameAuthor.prev && isSameAuthor.next;
@@ -79,5 +82,5 @@ function MessageItem({ message, isMoreThanTwoAuthors, isSameAuthor }: Props) {
 			)} */}
     </li>
   );
-}
+};
 export default MessageItem;
