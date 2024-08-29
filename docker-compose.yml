@@ -1,41 +1,8 @@
-version: '3.9'
-
-services: 
-
-  back-end:
-    build: 
-      context: ./server
-      dockerfile: ./Dockerfile
-    container_name: back-end
-    working_dir: /usr/src/app
-    networks: 
-      - node-network
-    volumes: 
-      - ./server:/usr/src/app
-      - /usr/src/app/node_modules
-    tty: true
-    ports: 
-      - "3000:3000"
-    command: npm run start:dev
-    depends_on:
-       - postgres
-
-  front-end:
-    build: 
-      context: ./Front
-    container_name: front-end
-    working_dir: /usr/src/app
-    networks: 
-      - node-network
-    volumes: 
-      - ./Front:/usr/src/app
-      - /usr/src/app/node_modules
-    tty: true
-    ports: 
-      - "5173:5173"
-    command: npm run dev
+services:
 
   postgres:
+    profiles:
+      - prod
     image: postgres:16.3
     container_name: postgres
     restart: always
@@ -43,29 +10,174 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
     environment:
+      - POSTGRES_DB=hidegram
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
     ports:
       - '5433:5432'
     expose:
       - '5433'
-    networks: 
+    networks:
       - node-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d hidegram" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-test:
+    profiles:
+      - test
+    image: postgres:16.3
+    container_name: postgres-test
+    restart: always
+    tty: true
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=hidegram
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5434:5432'
+    expose:
+      - '5434'
+    networks:
+      - node-network-test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d hidegram" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back-end:
+    profiles:
+      - prod
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+    container_name: back-end
+    working_dir: /usr/src/app
+    networks:
+      - node-network
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+    tty: true
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/hidegram
+      NODE_ENV: prod
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:prod"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  back-end-test:
+    profiles:
+      - test
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile.test
+    container_name: back-end-test
+    working_dir: /usr/src/app
+    networks:
+      - node-network-test
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+    tty: true
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres-test:5432/hidegram
+      NODE_ENV: dev
+    ports:
+      - "3001:3000"
+      - "5556:5556"
+    expose:
+      - 3001
+      - 5556
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:prod"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    restart: always
+
+  front-end:
+    profiles:
+      - prod
+    build:
+      context: ./Front
+    container_name: front-end
+    working_dir: /usr/src/app
+    networks:
+      - node-network
+    volumes:
+      - ./Front:/usr/src/app
+      - /usr/src/app/node_modules
+    tty: true
+    ports:
+      - "5173:5173"
+    command: >
+      sh -c "npm run build && npm run start"
+    restart: always
+
+  front-end-test:
+    profiles:
+      - test
+    build:
+      context: ./Front
+    container_name: front-end-test
+    working_dir: /usr/src/app
+    networks:
+      - node-network-test
+    volumes:
+      - ./Front:/usr/src/app
+      - /usr/src/app/node_modules
+    tty: true
+    ports:
+      - "5174:5173"
+    command: npm run dev
+    restart: always
 
   nginx:
-    build: 
+    profiles:
+      - prod
+    build:
       context: nginx
     container_name: nginx
     restart: always
     tty: true
-    ports: 
+    ports:
       - "8000:80"
-    networks: 
+    networks:
       - node-network
     depends_on:
-       - back-end
-       - front-end
-  
-networks: 
+      - back-end
+      - front-end
+
+#  nginx-test:
+#    profiles:
+#      - test
+#    build:
+#      context: nginx-test
+#    container_name: nginx-test
+#    restart: always
+#    tty: true
+#    ports:
+#      - "8000:80"
+#    networks:
+#      - node-network-test
+#    depends_on:
+#      - back-end-test
+#      - front-end-test
+
+networks:
   node-network:
+    driver: bridge
+  node-network-test:
     driver: bridge
