@@ -23,15 +23,17 @@ $ npm run start:prod
 ## DB
 
 ```bash
+# see TEST db
+$ npm run prisma-studio:test
 
-# restart db container
-$ npm run db
+# see PROD db
+$ npm run prisma-studio:prod
 
-# see db
-$ npm run prisma-studio
+# run DEV db migrations
+$ npx prisma migrate dev --name [name]
 
-# run db migrations
-$ npm run prisma-migrate-dev
+# run PROD db migrations
+$ npx prisma migrate deploy
 ```
 
 ## Test

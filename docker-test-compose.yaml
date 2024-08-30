@@ -1,0 +1,45 @@
+services:
+  front-end-test:
+    build:
+      context: Front
+    ports:
+      - "5174:5173"
+    container_name: front-end-test
+    command: npm run test
+
+  back-end-test:
+    build:
+      context: server
+    container_name: back-end-test
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres-test:5432/hidegram
+      NODE_ENV: production
+    ports:
+      - "3001:3000"
+      - "5556:5556"
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:prod"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+
+  postgres-test:
+    image: postgres:16.3
+    container_name: postgres-test
+    restart: always
+    tty: true
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=hidegram-test
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5434:5432'
+    expose:
+      - '5434'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d hidegram" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

@@ -1,6 +1,6 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine as builder
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 RUN npm install
@@ -8,19 +8,17 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:18-alpine AS production
 
-WORKDIR /app
+FROM node:20-alpine as production
+
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 RUN npm install --omit=dev
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
-# TODO check Expose the application port
 EXPOSE 3000
-#EXPOSE 3001
-EXPOSE 5555
-#EXPOSE 5556
+
