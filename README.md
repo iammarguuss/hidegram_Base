@@ -7,7 +7,7 @@
 $ git checkout master
 
 # start docker
-$ docker compose -f docker-prod-compose.yaml up --build
+$ docker compose -f docker-prod-compose.yaml up -d --build
 ```
 
 ### view PROD database
@@ -25,7 +25,7 @@ $ npm run prisma-studio:prod
 $ git checkout develop
 
 # start docker
-$ docker compose -f docker-test-compose.yaml up --build
+$ docker compose -f docker-test-compose.yaml up -d --build
 ```
 ### view TEST database
 

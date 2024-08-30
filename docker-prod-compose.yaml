@@ -6,6 +6,8 @@ services:
       - "5173:5173"
     container_name: front-end
     command: npm run start
+    networks:
+      - node-network-prod
 
   back-end:
     build:
@@ -22,6 +24,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - node-network-prod
 
   postgres:
     image: postgres:16.3
@@ -43,3 +47,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - node-network-prod
+
+networks:
+  node-network-prod:
+    driver: bridge
