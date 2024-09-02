@@ -4,6 +4,8 @@ services:
       context: Front
     ports:
       - "5174:5173"
+    expose:
+      - "5174"
     container_name: front-end-test
     command: npm run test
     networks:
@@ -19,6 +21,8 @@ services:
     ports:
       - "3001:3000"
       - "5556:5556"
+    expose:
+      - "3001"
     command: >
       sh -c "npx prisma migrate deploy && npm run start:prod"
     depends_on:
@@ -33,11 +37,13 @@ services:
     restart: always
     tty: true
     volumes:
+      - ./postgresql.conf:/etc/postgresql.conf
       - ./data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=hidegram-test
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/hidegram-test/
     ports:
       - '5434:5432'
     expose:
@@ -47,6 +53,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - node-network-test
+
+  nginx:
+    depends_on:
+      - back-end-test
+      - front-end-test
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: nginx
+    ports:
+      - "80:80"
+    expose:
+      - 80
     networks:
       - node-network-test
 
