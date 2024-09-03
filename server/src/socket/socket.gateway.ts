@@ -90,10 +90,5 @@ export class SocketGateway
     connected.forEach((socket) => {
       this.server.in(socket.id).emit('messages', { id: socket.id, messages });
     });
-
-    // this.server.on('disconnect', function () {
-    //   console.log('handleDisconnect socket.id: ', socket.id);
-    //   this.server.in(socket.id).emit('onDisconnect', { id: socket.id });
-    // });
   }
 }
