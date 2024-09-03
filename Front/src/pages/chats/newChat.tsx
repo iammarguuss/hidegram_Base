@@ -1,5 +1,4 @@
 import { useDispatch } from "react-redux";
-import { customAlphabet } from "nanoid";
 import { FC, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -10,7 +9,7 @@ import Header from "@/components/header";
 import Scrollable from "@/components/scrollable";
 import Button from "@/components/ui/button";
 import { SocketApi } from "@/socket";
-import { setMessagesByChatId } from "@/stores/slices/chat.js";
+import { removeChatRoom, setMessagesByChatId } from "@/stores/slices/chat.js";
 import { randomChatId } from "@/utils/helpers";
 
 const NewChat: FC = () => {
@@ -21,12 +20,11 @@ const NewChat: FC = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [chatId, setChatId] = useState<number | null>(null);
-  const nanoid = customAlphabet("1234567890abcdef", 10);
 
-  const handleConnect = async () => {
+  const handleConnect = async ({ id }: { id: string }) => {
     const crypto = new window.SteroidCrypto();
     const skey = await crypto.getSkey(password);
-    const roomId = nanoid(5);
+    const roomId = id;
     const newChat = {
       id: roomId,
       name,
@@ -37,11 +35,20 @@ const NewChat: FC = () => {
       chatId: chatId!,
       password,
       roomId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
+
+    SocketApi.instance.on("disconnect", () => handleDisconnect({ id }));
 
     dispatch(setMessagesByChatId(newChat));
     navigate(`/chats/${roomId}`);
+  };
+
+  const handleDisconnect = async ({ id }: { id: string }) => {
+    console.log({ handleDisconnectId: id });
+
+    dispatch(removeChatRoom(id));
+    navigate(`/chats`);
   };
 
   const onConnect = async () => {
@@ -54,7 +61,7 @@ const NewChat: FC = () => {
     }
 
     SocketApi.createConnection({ chatId: newChatId, skey });
-    SocketApi.instance.on("connect", handleConnect);
+    SocketApi.instance.on("onConnect", handleConnect);
   };
 
   return (

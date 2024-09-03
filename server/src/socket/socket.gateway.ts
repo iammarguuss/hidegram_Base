@@ -41,7 +41,7 @@ export class SocketGateway
       this.connectedClients.get(`${payload.skey}.${payload.chat_id}`) || [];
 
     connected.forEach((socket) => {
-      this.server.in(socket.id).emit('messages', messages);
+      this.server.in(socket.id).emit('messages', { id: socket.id, messages });
     });
   }
 
@@ -55,7 +55,7 @@ export class SocketGateway
       this.connectedClients.get(`${payload.skey}.${payload.chat_id}`) || [];
 
     connected.forEach((socket) => {
-      this.server.in(socket.id).emit('messages', messages);
+      this.server.in(socket.id).emit('messages', { id: socket.id, messages });
     });
   }
 
@@ -85,8 +85,15 @@ export class SocketGateway
     const connected = this.connectedClients.get(`${skey}.${chat_id}`) || [];
     this.connectedClients.set(`${skey}.${chat_id}`, [...connected, socket]);
 
+    this.server.in(socket.id).emit('onConnect', { id: socket.id });
+
     connected.forEach((socket) => {
-      this.server.in(socket.id).emit('messages', messages);
+      this.server.in(socket.id).emit('messages', { id: socket.id, messages });
     });
+
+    // this.server.on('disconnect', function () {
+    //   console.log('handleDisconnect socket.id: ', socket.id);
+    //   this.server.in(socket.id).emit('onDisconnect', { id: socket.id });
+    // });
   }
 }

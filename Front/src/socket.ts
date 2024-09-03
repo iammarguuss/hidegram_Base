@@ -10,7 +10,7 @@ export class SocketApi {
         skey,
       },
     });
-    this.socket.on("connect", this.onConnect);
+    this.socket.on("onConnect", this.onConnect);
     this.socket.on("disconnect", this.onDisconnect);
   }
 
@@ -22,8 +22,8 @@ export class SocketApi {
     return this.socket!;
   }
 
-  static onConnect() {
-    console.log("Connect");
+  static onConnect(id: string) {
+    console.log("Connected id: ", id);
   }
 
   static onDisconnect() {
