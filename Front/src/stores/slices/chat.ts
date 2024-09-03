@@ -29,21 +29,19 @@ const chatSlice = createSlice({
   } as IChatState,
   reducers: {
     setMessagesByChatId: (state, action: PayloadAction<IChat>) => {
-      const chatId = action.payload.roomId;
+      const roomId = action.payload.roomId;
+      const currentRoom = state.messages[roomId];
 
-      if (state.messages[chatId]) {
-        state.messages[chatId].data = action.payload.data;
-        state.messages[chatId].unreadMessages = state.messages[
-          chatId
-        ].data.filter(
-          (i) =>
-            new Date(i.created).getTime() > state.messages[chatId].timestamp
-        ).length;
+      if (currentRoom) {
+        state.messages[roomId].data = action.payload.data;
+
+        const unreadMessages = getUnreadMessages(currentRoom);
+        state.messages[roomId].unreadMessages = unreadMessages;
 
         return;
       }
 
-      state.messages[chatId] = action.payload;
+      state.messages[roomId] = action.payload;
     },
 
     // TODO I did not test this func
@@ -62,14 +60,24 @@ const chatSlice = createSlice({
       action: PayloadAction<{ roomId: string; data: number }>
     ) => {
       const roomId = action.payload.roomId;
+      const currentRoom = state.messages[roomId];
 
-      if (!state.messages[roomId]) return alert("Current chat could not found");
+      if (!currentRoom) return;
 
       state.messages[roomId].timestamp = action.payload.data;
+
+      const unreadMessages = getUnreadMessages(currentRoom);
+      state.messages[roomId].unreadMessages = unreadMessages;
     },
 
     setSelectedRoom: (state, action: PayloadAction<string | null>) => {
       state.selectedRoom = action.payload;
+    },
+
+    removeChatRoom: (state, action: PayloadAction<string>) => {
+      const roomId = action.payload;
+
+      delete state.messages[roomId];
     },
   },
 });
@@ -79,6 +87,21 @@ export const {
   addNewMessageByChatId,
   setLastEnterTimestamp,
   setSelectedRoom,
+  removeChatRoom,
 } = chatSlice.actions;
 
 export default chatSlice;
+
+const getUnreadMessages = (currentRoom: IChat) => {
+  const index = currentRoom.data.findIndex(
+    (i) => i.nickname === currentRoom.nickname
+  );
+  const cropped = currentRoom.data.slice(0, index);
+  const unreadMessages = cropped.filter(
+    (i) =>
+      new Date(i.created).getTime() > currentRoom.timestamp &&
+      i.nickname !== currentRoom.nickname
+  ).length;
+
+  return unreadMessages;
+};

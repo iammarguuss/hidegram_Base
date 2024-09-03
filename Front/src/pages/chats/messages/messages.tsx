@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import BackBtn from "@/components/backBtn";
@@ -46,11 +46,20 @@ const Messages: FC = () => {
 
   const currentRoom = roomList[userId!];
 
+  const setLastTimestamp = useCallback(
+    () =>
+      dispatch(
+        setLastEnterTimestamp({ roomId: currentRoom.roomId, data: Date.now() })
+      ),
+    [currentRoom.roomId, dispatch]
+  );
+
   useEffect(() => {
-    dispatch(
-      setLastEnterTimestamp({ roomId: currentRoom.roomId, data: Date.now() })
-    );
-  }, [userId]);
+    setLastTimestamp();
+    return () => {
+      setLastTimestamp();
+    };
+  }, [setLastTimestamp]);
 
   useEffect(() => {
     const currentChat = roomList[userId!];
@@ -68,15 +77,20 @@ const Messages: FC = () => {
     SocketApi.instance.on("messages", onMessageEvent);
   }, [userId]);
 
-  const onMessageEvent = async (data: IMessageBackend[]) => {
-    if (!data.length || !currentRoom.password) return;
+  const onMessageEvent = async ({
+    messages,
+  }: {
+    id: string;
+    messages: IMessageBackend[];
+  }) => {
+    if (!messages.length || !currentRoom.password) return;
 
     const crypto = new window.SteroidCrypto();
     const result: IMessage[] = [];
     const pass = await crypto.getPass(currentRoom.password);
 
-    for (let index = 0; index < data.length; index++) {
-      const current = data[index];
+    for (let index = 0; index < messages.length; index++) {
+      const current = messages[index];
       const message = await crypto.messageEnc(current.message, pass, false);
       result.push({
         id: current.id,
@@ -113,6 +127,12 @@ const Messages: FC = () => {
       skey: currentRoom.skey,
     });
     setMessage("");
+
+    return () => {
+      dispatch(
+        setLastEnterTimestamp({ roomId: currentRoom.roomId, data: Date.now() })
+      );
+    };
   };
 
   const onBack = (event: React.MouseEvent) => {
@@ -173,6 +193,7 @@ const Messages: FC = () => {
           className="h-[38px] mt-[6px] mr-2 md:pl-0.5 bg-black rounded-[20px]"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onFocus={setLastTimestamp}
         />
 
         <button
