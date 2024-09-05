@@ -36,9 +36,15 @@ export interface IMessageBackend {
   algo?: number;
 }
 
+const TIMEOUT_BETWEEN_MESSAGES = 400;
+
 const Messages: FC = () => {
   const { userId } = useParams();
   const [message, setMessage] = useState("");
+  const [messageQueue, setMessageQueue] = useState<
+    Array<Partial<IMessageBackend> & { rawMessage?: string }>
+  >([]);
+  const [isSending, setIsSending] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -76,6 +82,31 @@ const Messages: FC = () => {
   useEffect(() => {
     SocketApi.instance.on("messages", onMessageEvent);
   }, [userId]);
+
+  const handleMessageSend = useCallback(async () => {
+    if (messageQueue.length && !isSending) {
+      setIsSending(true);
+
+      const newMessage = messageQueue[0];
+      const crypto = new window.SteroidCrypto();
+      const pass = await crypto.getPass(currentRoom.password);
+      const text = await crypto.messageEnc(newMessage.rawMessage!, pass, true);
+
+      newMessage.message = text.t;
+      delete newMessage["rawMessage"];
+      delete newMessage["id"];
+      sendMessage(newMessage);
+
+      setTimeout(() => {
+        setMessageQueue((prevQueue) => prevQueue.slice(1));
+        setIsSending(false);
+      }, TIMEOUT_BETWEEN_MESSAGES);
+    }
+  }, [messageQueue, isSending, currentRoom.password]);
+
+  useEffect(() => {
+    handleMessageSend();
+  }, [handleMessageSend]);
 
   const onMessageEvent = async ({
     messages,
@@ -116,16 +147,17 @@ const Messages: FC = () => {
   const onSendMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
 
-    const crypto = new window.SteroidCrypto();
-    const pass = await crypto.getPass(currentRoom.password);
-    const text = await crypto.messageEnc(message, pass, true);
-
-    sendMessage({
+    if (!message) return;
+    const newMessage = {
       chat_id: currentRoom.chatId,
       nickname: currentRoom.nickname,
-      message: text.t,
       skey: currentRoom.skey,
-    });
+      rawMessage: message,
+      id: Date.now(),
+      message: "",
+    };
+
+    setMessageQueue((prevQueue) => [...prevQueue, newMessage]);
     setMessage("");
 
     return () => {
@@ -160,6 +192,28 @@ const Messages: FC = () => {
         </Header>
       </NavLink>
       <Scrollable className="h-[calc(100%-112px)] md:h-[calc(100%-110px)] p-[10px]  flex-col-reverse gap-0 after:content-[''] after:pt-5 after:h-[20px]">
+        {messageQueue
+          .slice()
+          .filter((i) => i.rawMessage)
+          .reverse()
+          .map((message, i) => (
+            <MessageItem
+              key={`${message.id}-${i}`}
+              message={{
+                id: message.id!,
+                chatId: message.chat_id!,
+                nickname: message.nickname!,
+                message: message.rawMessage!,
+                created: new Date().toLocaleDateString(),
+                skey: currentRoom.skey,
+              }}
+              isMoreThanTwoAuthors={isMoreThanTwoAuthors}
+              isSameAuthor={{ prev: true, next: true }}
+              pending={true}
+              nickname={currentRoom.nickname}
+            />
+          ))}
+
         {currentRoom?.data.map((message, i) => {
           const senderName = message.nickname;
           const isSameAuthor = {
@@ -197,8 +251,12 @@ const Messages: FC = () => {
         />
 
         <button
-          className="hidden min-w-[112px] mr-4 text-blue md:block"
+          className={twMerge(
+            "hidden min-w-[112px] mr-4 text-blue md:block",
+            !message && "cursor-not-allowed opacity-50"
+          )}
           onClick={onSendMessage}
+          disabled={!message}
         >
           Send message
         </button>
