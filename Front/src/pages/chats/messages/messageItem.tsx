@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 
 import TextMsg from "./textMsg";
 import { IMessage } from "./messages";
+import { Spinner } from "@/components/ui/spinner";
 // import ImageMsg from "./imageMsg";
 // import FileMsg from "./fileMsg";
 
@@ -27,10 +28,12 @@ interface IMessageItemProps {
   isMoreThanTwoAuthors: boolean;
   isSameAuthor: { prev: boolean; next: boolean };
   nickname: string;
+  pending?: boolean;
 }
 
 const MessageItem: FC<IMessageItemProps> = (props) => {
-  const { message, isMoreThanTwoAuthors, isSameAuthor, nickname } = props;
+  const { message, isMoreThanTwoAuthors, isSameAuthor, nickname, pending } =
+    props;
   const isMe = message.nickname === nickname;
   const isName = isMoreThanTwoAuthors && !isMe && !isSameAuthor.next;
   const isFirstMsg = isSameAuthor.prev && !isSameAuthor.next;
@@ -60,12 +63,8 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
         isSameAuthor.next && "mt-1"
       )}
     >
-      <TextMsg
-        message={message}
-        isMe={isMe}
-        isName={isName}
-        isInBetween={isInBetween}
-      />
+      <div>
+        <TextMsg message={message} isName={isName} isInBetween={isInBetween} />
 
       {/* {message.type === "image" && (
 				<ImageMsg
@@ -80,6 +79,24 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
 			{message.type === "file" && (
 				<FileMsg message={message} isName={isName} isMe={isMe} />
 			)} */}
+
+        <div className="px-2.5 pb-1.5 flex justify-end items-center leading-none opacity-50">
+          {pending && <Spinner />}
+
+          <div
+            className={twMerge(
+              "text-xs float-end pl-2",
+              isMe ? "text-[#DAEFFF]" : "text-[#A1AAB3]"
+            )}
+          >
+            {new Intl.DateTimeFormat("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            }).format(new Date(message?.created))}
+          </div>
+        </div>
+      </div>
     </li>
   );
 };
