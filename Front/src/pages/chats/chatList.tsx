@@ -8,34 +8,40 @@ import Menu from "@/components/menu/menu";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import Header from "@/components/header";
-import EditBtn from "@/components/editBtn";
 import Scrollable from "@/components/scrollable";
 import ChatItem from "./chatItem";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { IRootState } from "@/stores/rtk";
-import { ChatStore } from "@/stores/slices/chat";
+import { ChatStore, removeChatRoom } from "@/stores/slices/chat";
 import ContentWrapper from "@/components/contentWrapper";
+import { SocketApi } from "@/socket";
 
 const Chats: FC = () => {
   const chatList = useSelector((s: IRootState) => s.chatSlice.messages);
   const selectedRoom = useSelector((s: IRootState) => s.chatSlice.selectedRoom);
-  
+  const dispatch = useDispatch();
+
   const [isEdit, setIsEdit] = useState(false);
 
   const onDelete = () => {
     setIsEdit(false);
   };
 
-  const onEdit = () => {
-    // TODO
-    console.log("onEdit");
-  };
-
-  const converToArray = (object: ChatStore) => {
+  const convertToArray = (object: ChatStore) => {
     const list = [];
 
     for (const key in object) {
-      list.push(object[key]);
+      if (SocketApi.instances.has(key)) {
+        const socket = SocketApi.instances.get(key);
+        if (socket?.connected) {
+          list.push(object[key]);
+        } else {
+          dispatch(removeChatRoom(key));
+          SocketApi.instances.delete(key);
+        }
+      } else {
+        dispatch(removeChatRoom(key));
+      }
     }
     return list;
   };
@@ -44,10 +50,6 @@ const Chats: FC = () => {
     <>
       <SidebarWrapper>
         <Header className="md:h-[58px] md:p-[14px] md:gap-[14px] border-none">
-          <EditBtn className="text-left md:hidden" onClick={onEdit}>
-            {isEdit ? "Cancel" : "Edit"}
-          </EditBtn>
-
           <div className="relative hidden w-full md:block">
             <Input
               placeholder="Search"
@@ -74,7 +76,7 @@ const Chats: FC = () => {
         </Header>
 
         <Scrollable className="h-[calc(100%-124px)] md:h-[calc(100%-108px)] py-0 gap-0">
-          {converToArray(chatList).map((chat) => {
+          {convertToArray(chatList).map((chat) => {
             return (
               <ChatItem
                 key={chat.roomId}

@@ -9,13 +9,13 @@ import Header from "@/components/header";
 import Scrollable from "@/components/scrollable";
 import Button from "@/components/ui/button";
 import { SocketApi } from "@/socket";
-import { removeChatRoom, setMessagesByChatId } from "@/stores/slices/chat.js";
+import { setMessagesByChatId } from "@/stores/slices/chat.js";
 import { randomChatId } from "@/utils/helpers";
 
 const NewChat: FC = () => {
   const dispatch = useDispatch();
-
   const navigate = useNavigate();
+
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -38,17 +38,8 @@ const NewChat: FC = () => {
       timestamp: Date.now(),
     };
 
-    SocketApi.instance.on("disconnect", () => handleDisconnect({ id }));
-
     dispatch(setMessagesByChatId(newChat));
     navigate(`/chats/${roomId}`);
-  };
-
-  const handleDisconnect = async ({ id }: { id: string }) => {
-    console.log({ handleDisconnectId: id });
-
-    dispatch(removeChatRoom(id));
-    navigate(`/chats`);
   };
 
   const onConnect = async () => {
@@ -60,8 +51,8 @@ const NewChat: FC = () => {
       setChatId(newChatId);
     }
 
-    SocketApi.createConnection({ chatId: newChatId, skey });
-    SocketApi.instance.on("onConnect", handleConnect);
+    const socket = SocketApi.createConnection({ chatId: newChatId, skey });
+    socket.on("onConnect", handleConnect);
   };
 
   return (

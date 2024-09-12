@@ -79,6 +79,20 @@ const chatSlice = createSlice({
 
       delete state.messages[roomId];
     },
+
+    updateChatRoom: (
+      state,
+      action: PayloadAction<{ roomId: string; name: string; nickname: string }>
+    ) => {
+      const roomId = action.payload.roomId;
+
+      if (roomId) {
+        state.messages[roomId] = {
+          ...state.messages[roomId],
+          ...action.payload,
+        };
+      }
+    },
   },
 });
 
@@ -88,6 +102,7 @@ export const {
   setLastEnterTimestamp,
   setSelectedRoom,
   removeChatRoom,
+  updateChatRoom,
 } = chatSlice.actions;
 
 export default chatSlice;

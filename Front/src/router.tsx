@@ -65,8 +65,8 @@ export const routes = [
         path: "/chats",
         element: <Chats />,
         children: [
-          { path: ":userId", element: <Messages /> },
-          { path: "chat-settings", element: <ChatSettings /> },
+          { path: ":id", element: <Messages /> },
+          { path: "settings/:id", element: <ChatSettings /> },
           { path: "new-chat", element: <NewChat /> },
         ],
       },
