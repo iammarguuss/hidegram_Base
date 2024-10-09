@@ -20,3 +20,7 @@ model Message {
 
   @@index([chat_id, skey])
 }
+
+model Link {
+  code String @id
+}
