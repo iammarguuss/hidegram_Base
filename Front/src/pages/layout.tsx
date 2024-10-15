@@ -25,7 +25,9 @@ export default function Layout() {
 
     document.head.appendChild(script);
 
-    navigate("/chats");
+    if (!window.location.pathname.startsWith("/change/link/")) {
+      navigate("/chats");
+    }
   }, [navigate]);
 
   return (

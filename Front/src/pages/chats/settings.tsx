@@ -163,6 +163,8 @@ const ChatSettings = () => {
           <Switcher
             label="Filtered"
             classNameLabel="mb-[9px] md:rounded-[10px]"
+            checked={false}
+            onChange={(v) => console.log("TODO add Filter", v)}
           />
           <div className="px-4 text-sm text-gray">
             Turn this off if you want to receive notifications only from your
