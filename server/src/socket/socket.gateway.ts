@@ -103,7 +103,13 @@ export class SocketGateway
       const hexStringSHA = await generateSHA256Hash(hexString);
       await this.cacheManager.set(
         `${CHAT_DATA_KEY}_${payload.code}`,
-        { hexString, socketId: socket.id, hexStringSHA, ttl: payload.ttl },
+        {
+          hexString,
+          socketId: socket.id,
+          hexStringSHA,
+          ttl: payload.ttl,
+          validationPhraseEnabled: payload.validationPhraseEnabled,
+        },
         { ttl: payload.ttl },
       );
       this.server.in(socket.id).emit('link:result', {
@@ -131,6 +137,8 @@ export class SocketGateway
   @SubscribeMessage('prevalidate')
   async prevalidate(socket: Socket, payload: { link: string }): Promise<void> {
     try {
+      this.logger.debug('[prevalidate]');
+
       const packageBody = await this.cacheManager.get<IPackage>(
         `${PACKAGE_KEY}_${payload.link}`,
       );
@@ -147,6 +155,7 @@ export class SocketGateway
         this.server.in(socket.id).emit('prevalidate:result', {
           packageBody,
           hexString: data.hexString,
+          validationPhraseEnabled: data.validationPhraseEnabled,
         });
       } else {
         this.server
@@ -252,6 +261,7 @@ interface IChatData {
   socketId: string;
   getterSocketId: string;
   ttl: number;
+  validationPhraseEnabled: boolean;
 }
 
 interface IEncryptDataResponseBody {

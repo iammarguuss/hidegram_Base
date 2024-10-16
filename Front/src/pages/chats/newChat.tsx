@@ -207,7 +207,7 @@ declare global {
   }
 
   interface IEncryptDataResponseBody {
-    pass: string;
+    password: string;
     salt: number;
   }
 

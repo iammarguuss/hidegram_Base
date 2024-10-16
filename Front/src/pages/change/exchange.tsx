@@ -134,21 +134,31 @@ const Exchange = () => {
       }
 
       setEncryptionResult(result);
+
+      if (!exchangeStore.verificationPhrase) {
+        onApproveExchange(result, hexStringSHA);
+      }
     }
   };
 
-  const onApproveExchange = () => {
-    if (encryptionResult && keyPairs) {
-      const signature = getFromSession(`${SIGNATURE_KEY}${link}`);
+  const onApproveExchange = (
+    encryptResponse?: IEncryptDataResponse,
+    hexStringSHA?: string
+  ) => {
+    const publicKey = getFromSession(`${PUBLIC_KEY}${link}`);
+    const encryptionResultResponse = encryptionResult ?? encryptResponse;
+    const hexSHA = hStringSHA ?? hexStringSHA;
 
+    if (encryptionResultResponse && publicKey) {
+      const signature = getFromSession(`${SIGNATURE_KEY}${link}`);
       const socket = LinkSocketApi.instance;
 
       socket?.emit("to:getter", {
-        encryptionResult: encryptionResult.r,
+        encryptionResult: encryptionResultResponse.r,
         signature,
-        publicKey: keyPairs.publicKey,
-        hexStringSHA: hStringSHA,
-        aes: encryptionResult.aes,
+        publicKey: publicKey,
+        hexStringSHA: hexSHA,
+        aes: encryptionResultResponse.aes,
         link,
       });
     }
@@ -158,7 +168,11 @@ const Exchange = () => {
     const socket = LinkSocketApi.instance;
     if (socket) {
       const code = nanoid();
-      socket.emit("link:check", { code, ttl: exchangeStore.waitingTime * 60 });
+      socket.emit("link:check", {
+        code,
+        ttl: exchangeStore.waitingTime * 60,
+        validationPhraseEnabled: exchangeStore.verificationPhrase,
+      });
       setLink(code);
     }
   };
@@ -280,7 +294,7 @@ const Exchange = () => {
                 <div className="p-4">{encryptionResult.phrase}</div>
 
                 <div>
-                  <Button onClick={onApproveExchange}>Approve</Button>
+                  <Button onClick={() => onApproveExchange()}>Approve</Button>
                 </div>
               </div>
             ) : (

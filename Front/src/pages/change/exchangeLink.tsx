@@ -16,6 +16,7 @@ export const ExchangeLink = () => {
   const { link } = useParams();
   const [error, setError] = useState<boolean>(false);
   const [validationPhrase, setValidationPhrase] = useState("");
+  const [validationPhraseEnabled, setValidationPhraseEnabled] = useState(false);
   const [loading, setLoading] = useState<boolean>();
   const [packageBody, setPackageBody] = useState<
     ICreatePackageResponseBody | undefined
@@ -91,6 +92,7 @@ export const ExchangeLink = () => {
   const onResult = async (props: {
     packageBody: ICreatePackageResponseBody;
     hexString: string;
+    validationPhraseEnabled: boolean;
     error?: string;
   }) => {
     const { packageBody, hexString, error } = props;
@@ -102,6 +104,11 @@ export const ExchangeLink = () => {
     setPackageBody(packageBody);
     setHexString(hexString);
     setLoading(false);
+    setValidationPhraseEnabled(validationPhraseEnabled);
+
+    if (!validationPhraseEnabled) {
+      onSubmit(packageBody, hexString);
+    }
   };
 
   useEffect(() => {
@@ -136,37 +143,43 @@ export const ExchangeLink = () => {
     setValidationPhrase(event.target.value);
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (pBody?: ICreatePackageResponseBody, hex?: string) => {
     const crypto = new window.SteroidCrypto();
+    const body = packageBody ?? pBody;
+    const hString = hexString ?? hex;
 
-    if (packageBody && hexString) {
-      const validationResult = await crypto.prevalidator(
-        {
-          publicKey: packageBody.publicKey,
-          originSha: packageBody.originSha,
-          signature: packageBody.signature,
-        },
-        hexString
-      );
+    if (body && hString) {
+      try {
+        const validationResult = await crypto.prevalidator(
+          {
+            publicKey: body.publicKey,
+            originSha: body.originSha,
+            signature: body.signature,
+          },
+          hString
+        );
 
-      const responseResult = await crypto.responceRSA(
-        validationResult.r,
-        hexString,
-        validationPhrase
-      );
+        const responseResult = await crypto.responceRSA(
+          validationResult.r,
+          hString,
+          validationPhrase
+        );
 
-      if (responseResult.e) {
+        if (responseResult.e) {
+          setError(true);
+        }
+
+        storeInSession(`aes_${link}`, responseResult.aes);
+
+        const socket = LinkSocketApi.instance;
+
+        socket?.emit("rsa", {
+          rsa: responseResult.r,
+          link,
+        });
+      } catch (error) {
         setError(true);
       }
-
-      storeInSession(`aes_${link}`, responseResult.aes);
-
-      const socket = LinkSocketApi.instance;
-
-      socket?.emit("rsa", {
-        rsa: responseResult.r,
-        link,
-      });
     } else {
       setError(true);
     }
@@ -190,32 +203,34 @@ export const ExchangeLink = () => {
         {loading ? (
           <Spinner size={8} />
         ) : (
-          <>
-            <div className="max-w-2xl mx-auto py-[35px] gap-[35px]">
-              <div className="mb-[6px] ml-[16px] text-gray text-sm">
-                VERIFICATION PHRASE
-              </div>
+          validationPhraseEnabled && (
+            <>
+              <div className="max-w-2xl mx-auto py-[35px] gap-[35px]">
+                <div className="mb-[6px] ml-[16px] text-gray text-sm">
+                  VERIFICATION PHRASE
+                </div>
 
-              <div className="bg-darkGray flex md:rounded-[10px]">
-                <Input
-                  className="text-gray md:rounded-[10px]"
-                  value={validationPhrase}
-                  onChange={onChangeValidationPhrase}
-                />
-
-                {validationPhrase && (
-                  <img
-                    src="/x-icon.svg"
-                    alt="clear verification phrase"
-                    className="mr-4"
-                    onClick={() => setValidationPhrase("")}
+                <div className="bg-darkGray flex md:rounded-[10px]">
+                  <Input
+                    className="text-gray md:rounded-[10px]"
+                    value={validationPhrase}
+                    onChange={onChangeValidationPhrase}
                   />
-                )}
-              </div>
-            </div>
 
-            <Button onClick={onSubmit}>Send</Button>
-          </>
+                  {validationPhrase && (
+                    <img
+                      src="/x-icon.svg"
+                      alt="clear verification phrase"
+                      className="mr-4"
+                      onClick={() => setValidationPhrase("")}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <Button onClick={() => onSubmit()}>Send</Button>
+            </>
+          )
         )}
       </div>
     </>
