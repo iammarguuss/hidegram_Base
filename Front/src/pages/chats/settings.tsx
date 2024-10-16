@@ -172,7 +172,7 @@ const ChatSettings = () => {
           </div>
         </div>
 
-        <Button onClick={onSubmit}>Load To Access</Button>
+        <Button onClick={onSubmit}>Save</Button>
 
         <Button className="text-red" onClick={onDelete}>
           Delete Chat
