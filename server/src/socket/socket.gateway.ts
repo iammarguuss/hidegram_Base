@@ -196,6 +196,21 @@ export class SocketGateway
     }
   }
 
+  @SubscribeMessage('last:check:from')
+  async lastCheck(socket: Socket, payload: ILastCheckProps): Promise<void> {
+    try {
+      const data = await this.cacheManager.get<IChatData>(
+        `${CHAT_DATA_KEY}_${payload.link}`,
+      );
+
+      if (data) {
+        this.server.in(data.socketId).emit('last:check:to', payload);
+      }
+    } catch (error) {
+      this.logger.error('Error in toGetter:', error);
+    }
+  }
+
   private addClientToRoom(socket: Socket, skey: string, chat_id: string) {
     const roomKey = `${skey}.${chat_id}`;
     const connected = this.connectedClients.get(roomKey) || [];
@@ -250,5 +265,10 @@ interface IFinalAccepterProps {
   publicKey: string;
   hexStringSHA: string;
   aes: string;
+  link: string;
+}
+
+interface ILastCheckProps {
+  signature: string;
   link: string;
 }

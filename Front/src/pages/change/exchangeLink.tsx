@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { LinkSocketApi } from "@/link.socket";
 import { SocketApi } from "@/socket";
 import { setMessagesByChatId } from "@/stores/slices/chat";
+import { getFromSession, storeInSession } from "@/utils/helpers";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -34,7 +35,7 @@ export const ExchangeLink = () => {
   const onFinalAccepter = async (props: IFinalAccepterProps) => {
     const { encryptionResult, signature, publicKey, hexStringSHA } = props;
     const crypto = new window.SteroidCrypto();
-    const aes = window.sessionStorage.getItem(`aes_${link}`);
+    const aes = getFromSession(`aes_${link}`);
 
     if (aes) {
       const result = await crypto.finalAccepter(
@@ -72,21 +73,7 @@ export const ExchangeLink = () => {
             timestamp: Date.now(),
           };
 
-          const password = await crypto.getPass(pass);
-          const message = await crypto.messageEnc(
-            validationPhrase,
-            password,
-            true
-          );
-
-          const newMessage = {
-            chat_id: chatId,
-            nickname: "Anonymous",
-            skey,
-            id: Date.now(),
-            message: message.t,
-          };
-          socket.emit("messages:send", newMessage);
+          socket.emit("last:check:from", { link, signature });
 
           dispatch(setMessagesByChatId(newChat));
           navigate(`/chats/${roomId}`);
@@ -172,7 +159,7 @@ export const ExchangeLink = () => {
         setError(true);
       }
 
-      window.sessionStorage.setItem(`aes_${link}`, responseResult.aes);
+      storeInSession(`aes_${link}`, responseResult.aes);
 
       const socket = LinkSocketApi.instance;
 

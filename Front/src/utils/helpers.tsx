@@ -15,3 +15,12 @@ export const convertMinsToHrsMins = (mins: number) => {
 
   return hours ? `${hours}h ${formattedMinutes}m` : `${formattedMinutes}m`;
 };
+
+// Helper to store data in sessionStorage
+export const storeInSession = (key: string, value: string) => {
+  window.sessionStorage.setItem(key, value);
+};
+
+export const getFromSession = (key: string): string | null => {
+  return window.sessionStorage.getItem(key);
+};

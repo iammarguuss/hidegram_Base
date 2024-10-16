@@ -8,12 +8,20 @@ import { LinkSocketApi } from "@/link.socket";
 import { SocketApi } from "@/socket";
 import { IRootState } from "@/stores/rtk";
 import { setMessagesByChatId } from "@/stores/slices/chat";
+import { getFromSession, storeInSession } from "@/utils/helpers";
 import { customAlphabet } from "nanoid";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 
 const nanoid = customAlphabet("1234567890abcdef", 16);
+
+// Constants
+const PREFIX = "crypto_";
+const SALT_KEY = `${PREFIX}salt_`;
+const SIGNATURE_KEY = `${PREFIX}signature_`;
+const PRIVATE_KEY = `${PREFIX}privateKey_`;
+const PUBLIC_KEY = `${PREFIX}publicKey_`;
 
 const Exchange = () => {
   const exchangeStore = useSelector((s: IRootState) => s.exchangeSlice);
@@ -29,11 +37,16 @@ const Exchange = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const onLastCheck = async (props: { signature: string; salt: string }) => {
-    const { signature, salt } = props;
-    const crypto = new window.SteroidCrypto();
-    const checkResult = await crypto.lastCheck(signature, salt);
-    setLastCheckSuccess(checkResult.s);
+  const onLastCheck = async (props: { signature: string }) => {
+    const { signature } = props;
+    const salt = getFromSession(`${SALT_KEY}${link}`);
+
+    if (salt) {
+      const crypto = new window.SteroidCrypto();
+      const checkResult = await crypto.lastCheck(signature, salt);
+
+      setLastCheckSuccess(checkResult.s);
+    }
   };
 
   const onHandleResult = async (data: {
@@ -59,19 +72,10 @@ const Exchange = () => {
       exchangeStore.waitingTime
     );
 
-    window.sessionStorage.setItem(`salt_${hexStringSHA}`, packageResult.salt);
-    window.sessionStorage.setItem(
-      `salt_${hexStringSHA}_signature`,
-      packageResult.r.signature
-    );
-    window.sessionStorage.setItem(
-      `salt_${hexStringSHA}_privateKey`,
-      keyPairResult.r.privateKey
-    );
-    window.sessionStorage.setItem(
-      `salt_${hexStringSHA}_publicKey`,
-      keyPairResult.r.publicKey
-    );
+    storeInSession(`${SALT_KEY}${link}`, packageResult.salt);
+    storeInSession(`${SIGNATURE_KEY}${link}`, packageResult.r.signature);
+    storeInSession(`${PRIVATE_KEY}${link}`, keyPairResult.r.privateKey);
+    storeInSession(`${PUBLIC_KEY}${link}`, keyPairResult.r.publicKey);
 
     const socket = LinkSocketApi.instance;
     const args = {
@@ -105,13 +109,9 @@ const Exchange = () => {
 
     setHStringSHA(hexStringSHA);
 
-    const salt = window.sessionStorage.getItem(`salt_${hexStringSHA}`);
-    const privateKey = window.sessionStorage.getItem(
-      `salt_${hexStringSHA}_privateKey`
-    );
-    const publicKey = window.sessionStorage.getItem(
-      `salt_${hexStringSHA}_publicKey`
-    );
+    const salt = getFromSession(`${SALT_KEY}${link}`);
+    const privateKey = getFromSession(`${PRIVATE_KEY}${link}`);
+    const publicKey = getFromSession(`${PUBLIC_KEY}${link}`);
     const crypto = new window.SteroidCrypto();
     const changePassword = {
       pass: exchangeStore.password,
@@ -137,11 +137,9 @@ const Exchange = () => {
     }
   };
 
-  const onApprove = () => {
+  const onApproveExchange = () => {
     if (encryptionResult && keyPairs) {
-      const signature = window.sessionStorage.getItem(
-        `salt_${hStringSHA}_signature`
-      );
+      const signature = getFromSession(`${SIGNATURE_KEY}${link}`);
 
       const socket = LinkSocketApi.instance;
 
@@ -192,7 +190,7 @@ const Exchange = () => {
 
     if (socket) {
       socket.on("link:result", onHandleResult);
-      socket.on("last:check", onLastCheck);
+      socket.on("last:check:to", onLastCheck);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [LinkSocketApi.instance, link]);
@@ -259,30 +257,49 @@ const Exchange = () => {
         {loading && <Spinner size={8} />}
 
         {link && !loading && (
-          <div className="p-4 bg-darkGray md:rounded-[10px] mb-4">
-            <a
-              className="text-blue"
-              target="_blank"
-              rel="noopener noreferrer"
-              href={`${window.location.protocol}//${window.location.hostname}/change/link/${link}`}
-            >{`${window.location.protocol}//${window.location.hostname}/change/link/${link}`}</a>
+          <div>
+            <p className="mb-[6px] pl-4 text-sm text-gray">
+              You can share the link with your interlocutor
+            </p>
+
+            <div className="p-4 bg-darkGray md:rounded-[10px] mb-4">
+              <a
+                className="text-blue"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={`${window.location.protocol}//${window.location.hostname}/change/link/${link}`}
+              >{`${window.location.protocol}//${window.location.hostname}/change/link/${link}`}</a>
+            </div>
           </div>
         )}
 
-        {link && exchangeStore.verificationPhrase && (
+        {link && exchangeStore.verificationPhrase && !lastCheckSuccess && (
           <div className="p-4 bg-darkGray md:rounded-[10px] mb-4">
             {encryptionResult ? (
-              <>
-                <div>{encryptionResult.phrase}</div>
-                <Button onClick={onApprove}>Approve</Button>
-              </>
+              <div className="flex-col">
+                <div className="p-4">{encryptionResult.phrase}</div>
+
+                <div>
+                  <Button onClick={onApproveExchange}>Approve</Button>
+                </div>
+              </div>
             ) : (
-              <div>Please waite for phrase</div>
+              <div className="flex items-center">
+                <div className="mr-4">
+                  <Spinner size={8} />
+                </div>
+
+                <span>You can share the link and waite for phrase</span>
+              </div>
             )}
           </div>
         )}
 
-        {lastCheckSuccess && <Button onClick={openChat}>Open Chat</Button>}
+        {lastCheckSuccess && (
+          <Button className="mb-8" onClick={openChat}>
+            Open Chat
+          </Button>
+        )}
 
         {keyPairs && !loading && (
           <div>
