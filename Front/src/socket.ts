@@ -1,32 +1,45 @@
 import io, { Socket } from "socket.io-client";
 
 export class SocketApi {
-  private static socket: Socket | null = null;
+  static instances: Map<string, Socket> = new Map();
 
-  static createConnection({ chatId, skey }: { chatId: number; skey: number }) {
-    this.socket = io(import.meta.env.VITE_SERVER_URL, {
+  static createConnection({
+    chatId,
+    skey,
+  }: {
+    chatId: number;
+    skey: number;
+  }): Socket {
+    const socket = io(import.meta.env.VITE_SERVER_URL, {
       query: {
         chatId,
         skey,
       },
     });
-    this.socket.on("onConnect", this.onConnect);
-    this.socket.on("disconnect", this.onDisconnect);
-  }
 
-  static get instance(): Socket {
-    if (this.socket === null) {
-      window.location.href = "/chats/";
+    socket.on("connect", () => {
+      if (socket.id) {
+        this.instances.set(socket.id, socket);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      if (socket.id) {
+        this.instances.delete(socket.id);
+      }
+    });
+
+    if (import.meta.env.MODE === "dev") {
+      socket.onAny((event, ...args) => {
+        console.log("ANY: ", {
+          socket: socket.id,
+          event,
+          args,
+          instances: SocketApi.instances,
+        });
+      });
     }
 
-    return this.socket!;
-  }
-
-  static onConnect(id: string) {
-    console.log("Connected id: ", id);
-  }
-
-  static onDisconnect() {
-    console.log("Disconnect");
+    return socket;
   }
 }

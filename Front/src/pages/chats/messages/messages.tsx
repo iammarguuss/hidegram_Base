@@ -7,7 +7,6 @@ import Header from "@/components/header";
 import Input from "@/components/ui/input";
 import Scrollable from "@/components/scrollable";
 import MessageItem from "./messageItem";
-import { SocketApi } from "../../../socket";
 import { useDispatch, useSelector } from "react-redux";
 import { IRootState } from "@/stores/rtk.js";
 import {
@@ -15,6 +14,7 @@ import {
   setMessagesByChatId,
   setSelectedRoom,
 } from "@/stores/slices/chat.js";
+import { SocketApi } from "@/socket";
 
 export interface IMessage {
   id: number;
@@ -39,7 +39,7 @@ export interface IMessageBackend {
 const TIMEOUT_BETWEEN_MESSAGES = 400;
 
 const Messages: FC = () => {
-  const { userId } = useParams();
+  const { id } = useParams();
   const [message, setMessage] = useState("");
   const [messageQueue, setMessageQueue] = useState<
     Array<Partial<IMessageBackend> & { rawMessage?: string }>
@@ -50,15 +50,16 @@ const Messages: FC = () => {
 
   const roomList = useSelector((s: IRootState) => s.chatSlice.messages);
 
-  const currentRoom = roomList[userId!];
+  const currentRoom = roomList[id!];
 
-  const setLastTimestamp = useCallback(
-    () =>
+  const setLastTimestamp = useCallback(() => {
+    if (currentRoom) {
       dispatch(
         setLastEnterTimestamp({ roomId: currentRoom.roomId, data: Date.now() })
-      ),
-    [currentRoom.roomId, dispatch]
-  );
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoom?.roomId, dispatch]);
 
   useEffect(() => {
     setLastTimestamp();
@@ -68,22 +69,55 @@ const Messages: FC = () => {
   }, [setLastTimestamp]);
 
   useEffect(() => {
-    const currentChat = roomList[userId!];
+    const currentChat = roomList[id!];
     if (currentChat) {
-      SocketApi.instance.emit("messages:get", {
+      SocketApi.instances.get(id!)?.emit("messages:get", {
         chat_id: currentChat.chatId,
         skey: currentChat.skey,
       });
       return;
     }
     navigate("/chats");
-  }, [userId]);
+  }, [id]);
 
   useEffect(() => {
-    SocketApi.instance.on("messages", onMessageEvent);
-  }, [userId]);
+    const onMessageEvent = async ({
+      messages,
+    }: {
+      id: string;
+      messages: IMessageBackend[];
+    }) => {
+      if (!messages.length || !currentRoom.password) return;
+
+      const crypto = new window.SteroidCrypto();
+      const result: IMessage[] = [];
+      const pass = await crypto.getPass(currentRoom.password);
+
+      for (let index = 0; index < messages.length; index++) {
+        const current = messages[index];
+        const message = await crypto.messageEnc(current.message, pass, false);
+        result.push({
+          id: current.id,
+          chatId: current.chat_id,
+          nickname: current.nickname,
+          message: message.t,
+          created: current.created,
+          skey: current.skey,
+          algo: current.algo,
+        });
+      }
+
+      dispatch(setMessagesByChatId({ ...currentRoom, data: result.reverse() }));
+    };
+
+    SocketApi.instances.get(id!)?.on("messages", onMessageEvent);
+  }, [currentRoom, dispatch]);
 
   const handleMessageSend = useCallback(async () => {
+    const sendMessage = (data: Partial<IMessageBackend>) => {
+      SocketApi.instances.get(id!)?.emit("messages:send", data);
+    };
+
     if (messageQueue.length && !isSending) {
       setIsSending(true);
 
@@ -102,44 +136,11 @@ const Messages: FC = () => {
         setIsSending(false);
       }, TIMEOUT_BETWEEN_MESSAGES);
     }
-  }, [messageQueue, isSending, currentRoom.password]);
+  }, [messageQueue, isSending, id, currentRoom?.password]);
 
   useEffect(() => {
     handleMessageSend();
   }, [handleMessageSend]);
-
-  const onMessageEvent = async ({
-    messages,
-  }: {
-    id: string;
-    messages: IMessageBackend[];
-  }) => {
-    if (!messages.length || !currentRoom.password) return;
-
-    const crypto = new window.SteroidCrypto();
-    const result: IMessage[] = [];
-    const pass = await crypto.getPass(currentRoom.password);
-
-    for (let index = 0; index < messages.length; index++) {
-      const current = messages[index];
-      const message = await crypto.messageEnc(current.message, pass, false);
-      result.push({
-        id: current.id,
-        chatId: current.chat_id,
-        nickname: current.nickname,
-        message: message.t,
-        created: current.created,
-        skey: current.skey,
-        algo: current.algo,
-      });
-    }
-
-    dispatch(setMessagesByChatId({ ...currentRoom, data: result.reverse() }));
-  };
-
-  const sendMessage = (data: Partial<IMessageBackend>) => {
-    SocketApi.instance.emit("messages:send", data);
-  };
 
   const isMoreThanTwoAuthors =
     [...new Set(currentRoom?.data.map((msg) => msg.nickname))].length > 2;
@@ -175,7 +176,7 @@ const Messages: FC = () => {
 
   return (
     <>
-      <NavLink to="/chats/chat-settings">
+      <NavLink to={`/chats/settings/${id}`}>
         <Header>
           <BackBtn className="md:hidden" onClick={onBack} />
 

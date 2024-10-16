@@ -3,10 +3,17 @@ import { Outlet, useNavigate } from "react-router-dom";
 
 import { UserAgreementModal } from "@/components/userAgreementModal";
 import { ConnectionErrorModal } from "@/components/connectionErrorModal";
+import { SocketApi } from "@/socket";
 
 export default function Layout() {
   const [isShownAgreement, setIsShownAgreement] = useState(() => true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      SocketApi.instances.forEach((i) => i.disconnect());
+    };
+  }, []);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -18,7 +25,9 @@ export default function Layout() {
 
     document.head.appendChild(script);
 
-    navigate("/chats");
+    if (!window.location.pathname.startsWith("/change/link/")) {
+      navigate("/chats");
+    }
   }, [navigate]);
 
   return (
