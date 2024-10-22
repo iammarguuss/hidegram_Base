@@ -205,7 +205,7 @@ const Messages: FC = () => {
                 chatId: message.chat_id!,
                 nickname: message.nickname!,
                 message: message.rawMessage!,
-                created: new Date().toLocaleDateString(),
+                created: new Date().toISOString(),
                 skey: currentRoom.skey,
               }}
               isMoreThanTwoAuthors={isMoreThanTwoAuthors}
