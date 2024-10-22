@@ -169,9 +169,14 @@ const PassSettings = () => {
 
             <Button onClick={onSubmitGenerate}>Apply</Button>
 
-            {entropy && (
+            {exchangeStore.password && (
               <div className="bg-darkGray md:rounded-[10px] p-4">
                 <div>Password: {exchangeStore.password}</div>
+              </div>
+            )}
+
+            {entropy && (
+              <div className="bg-darkGray md:rounded-[10px] p-4">
                 <div className="mt-[9px]">Entropy: {entropy.toFixed(0)}</div>
                 <p className="mt-[2px] text-gray mb-[6px] text-sm">
                   number for entropy (if more then 100 is good)

@@ -18,7 +18,7 @@ const exchangeSlice = createSlice({
   initialState: {
     generatedPassword: true,
     password: "",
-    passwordLength: 16,
+    passwordLength: 32,
     useSpecialCharacters: true,
     useCapitalLetters: true,
     useNumbers: true,

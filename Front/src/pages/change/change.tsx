@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import BackBtn from "@/components/backBtn";
 import ContentWrapper from "@/components/contentWrapper";
@@ -14,10 +14,39 @@ import Divider from "@/components/ui/divider";
 import Input from "@/components/ui/input";
 import { IRootState } from "@/stores/rtk";
 import { convertMinsToHrsMins } from "@/utils/helpers";
+import { setPassword } from "@/stores/slices/exchange";
 
 const Change = () => {
   const exchangeStore = useSelector((s: IRootState) => s.exchangeSlice);
   const [isSend, setIsSend] = useState(true);
+  const dispatch = useDispatch();
+  const [code, setCode] = useState<string>("");
+
+  const generatePassword = useCallback(async () => {
+    const crypto = new window.SteroidCrypto();
+    const passwordInfo = await crypto.ChangePassGen(
+      exchangeStore.passwordLength,
+      exchangeStore.useCapitalLetters,
+      exchangeStore.useNumbers,
+      exchangeStore.useSpecialCharacters
+    );
+
+    const pass = passwordInfo.r.pass;
+
+    if (pass) {
+      dispatch(setPassword(pass));
+    }
+  }, [
+    dispatch,
+    exchangeStore.passwordLength,
+    exchangeStore.useCapitalLetters,
+    exchangeStore.useNumbers,
+    exchangeStore.useSpecialCharacters,
+  ]);
+
+  useEffect(() => {
+    generatePassword();
+  }, [generatePassword]);
 
   return (
     <>
@@ -182,7 +211,7 @@ const Change = () => {
                 EXCHANGE CODE
               </div>
               <div className="bg-darkGray flex md:rounded-[10px]">
-                <Input type="text" className="md:rounded-[10px]" />
+                <Input type="text" className="md:rounded-[10px]" value={code} onChange={(e) => setCode(e.target.value)}/>
                 <img
                   src="/x-icon.svg"
                   alt="show password icon"
@@ -193,7 +222,7 @@ const Change = () => {
 
             <div>
               <div className="mb-[6px] ml-[16px] text-gray text-sm">
-                EXCHANGE CODE
+                VALIDATION PHRASE
               </div>
               <div className="bg-darkGray flex md:rounded-[10px]">
                 <Input
@@ -209,7 +238,7 @@ const Change = () => {
             </div>
 
             <NavLink
-              to="/change/exchange"
+              to={isSend ? "/change/exchange" : `/change/link/${code}`}
               className="w-full h-[44px] flex items-center text-blue justify-center bg-darkGray md:rounded-[10px] mx-auto"
             >
               Exchange

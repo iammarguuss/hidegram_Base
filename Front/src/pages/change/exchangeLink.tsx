@@ -16,7 +16,7 @@ export const ExchangeLink = () => {
   const { link } = useParams();
   const [error, setError] = useState<boolean>(false);
   const [validationPhrase, setValidationPhrase] = useState("");
-  const [validationPhraseEnabled, setValidationPhraseEnabled] = useState(false);
+  const [validationPhrasePresents, setValidationPhrasePresents] = useState(false);
   const [loading, setLoading] = useState<boolean>();
   const [packageBody, setPackageBody] = useState<
     ICreatePackageResponseBody | undefined
@@ -95,8 +95,8 @@ export const ExchangeLink = () => {
     validationPhraseEnabled: boolean;
     error?: string;
   }) => {
-    const { packageBody, hexString, error } = props;
-
+    const { packageBody, hexString, error, validationPhraseEnabled } = props;
+    
     if (error) {
       setError(true);
     }
@@ -104,7 +104,7 @@ export const ExchangeLink = () => {
     setPackageBody(packageBody);
     setHexString(hexString);
     setLoading(false);
-    setValidationPhraseEnabled(validationPhraseEnabled);
+    setValidationPhrasePresents(validationPhraseEnabled);
 
     if (!validationPhraseEnabled) {
       onSubmit(packageBody, hexString);
@@ -203,7 +203,7 @@ export const ExchangeLink = () => {
         {loading ? (
           <Spinner size={8} />
         ) : (
-          validationPhraseEnabled && (
+          validationPhrasePresents && (
             <>
               <div className="max-w-2xl mx-auto py-[35px] gap-[35px]">
                 <div className="mb-[6px] ml-[16px] text-gray text-sm">
