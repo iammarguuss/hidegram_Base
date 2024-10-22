@@ -40,6 +40,9 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
   const isLastMsg = !isSameAuthor.prev && isSameAuthor.next;
   const isInBetween = isSameAuthor.prev && isSameAuthor.next;
 
+  // TODO remove
+  console.log("message: ", message);
+  
   return (
     <li
       className={twMerge(
@@ -66,7 +69,7 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
       <div>
         <TextMsg message={message} isName={isName} isInBetween={isInBetween} />
 
-      {/* {message.type === "image" && (
+        {/* {message.type === "image" && (
 				<ImageMsg
 					message={message}
 					isMe={isMe}
@@ -75,7 +78,7 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
 					isLastMsg={isLastMsg}
 				/>
 			)} */}
-      {/* 
+        {/* 
 			{message.type === "file" && (
 				<FileMsg message={message} isName={isName} isMe={isMe} />
 			)} */}
@@ -89,11 +92,13 @@ const MessageItem: FC<IMessageItemProps> = (props) => {
               isMe ? "text-[#DAEFFF]" : "text-[#A1AAB3]"
             )}
           >
-            {new Intl.DateTimeFormat("en-US", {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            }).format(new Date(message?.created))}
+            {message?.created
+              ? new Intl.DateTimeFormat("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                }).format(new Date(message.created))
+              : ""}
           </div>
         </div>
       </div>
