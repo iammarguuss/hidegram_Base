@@ -33,3 +33,7 @@ $ docker compose -f docker-test-compose.yaml up -d --build
 $ cd server
 $ npm run prisma-studio:test
 ```
+
+# DB backup
+
+docker exec -t postgres pg_dumpall -c -U user > dump_2024-10-28_19_44.sql 
